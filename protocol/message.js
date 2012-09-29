@@ -1,4 +1,7 @@
-module.exports = function (zlib, snappy, crc32) {
+module.exports = function (
+	zlib,
+	snappy,
+	crc32) {
 
 	function Message() {
 		this.magic = 0

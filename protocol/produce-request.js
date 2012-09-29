@@ -1,20 +1,49 @@
 module.exports = function (
-	RequestHeader) {
+	RequestHeader,
+	Message) {
 
 	function ProduceRequest() {
 		this.header = null
 		this.messages = []
 	}
 
+	function messageToBuffer(m) { return m.toBuffer() }
+	function sumLength(t, b) { return t + b.length }
+
+
+	ProduceRequest.prototype._compress = function (stream, cb) {
+		var messageBuffers = this.messages.map(messageToBuffer)
+		var messagesLength = messageBuffers.reduce(sumLength, 0)
+		var wrapper = new Message()
+		wrapper.setData(
+			Buffer.concat(messageBuffers, messagesLength),
+			Message.compression.GZIP,
+			function (err) {
+				cb(err, wrapper.toBuffer())
+			}
+		)
+	}
+
+	ProduceRequest.prototype._foo = function (stream, cb) {
+
+	}
+
 	ProduceRequest.prototype.serialize = function (stream) {
-		var messageBuffers = this.messages.map(function (m) { return m.toBuffer() })
-		var messagesLength = messageBuffers.reduce(function (t, b) { return t + b.length }, 0)
-		this.header = new RequestHeader(messagesLength + 4, 0, 'test')
-		this.header.serialize(stream)
-		var mlen = new Buffer(4)
-		mlen.writeUInt32BE(messagesLength, 0)
-		stream.write(mlen)
-		messageBuffers.forEach(function (b) { stream.write(b) })
+		var payload
+
+		this._compress(
+			stream,
+			function (err, buffer) {
+				this.header = new RequestHeader(buffer.length + 4, 0, 'test')
+				this.header.serialize(stream)
+
+				var mlen = new Buffer(4)
+				mlen.writeUInt32BE(buffer.length, 0)
+				stream.write(mlen)
+
+				stream.write(buffer)
+			}
+		)
 	}
 
 	return ProduceRequest

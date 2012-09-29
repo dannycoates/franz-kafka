@@ -13,7 +13,7 @@ var Response = require('./response')(ResponseHeader, FetchBody, OffsetsBody)
 var Receiver = require('./receiver')(NullState, Response)
 var FetchRequest = require('./fetch-request')(RequestHeader)
 var OffsetsRequest = require('./offsets-request')(RequestHeader)
-var ProduceRequest = require('./produce-request')(RequestHeader)
+var ProduceRequest = require('./produce-request')(RequestHeader, Message)
 
 module.exports = {
 	Receiver: Receiver,
