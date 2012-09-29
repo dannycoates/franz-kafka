@@ -14,11 +14,11 @@ module.exports = function (
 		}
 		this.cb = cb
 		this.request = request
-		this.complete = false
+		this.done = false
 	}
 
 	Response.prototype.complete = function () {
-		return complete
+		return done
 	}
 
 	Response.prototype.read = function (stream) {
@@ -27,14 +27,14 @@ module.exports = function (
 			if (Array.isArray(result)) { // TODO: better
 				// something something
 				this.cb(result)
-				this.complete = true
+				this.done = true
 				break;
 			}
 			else {
 				this.state = result
 			}
 		}
-		return this.complete
+		return this.done
 	}
 
 	return Response

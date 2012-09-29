@@ -35,6 +35,7 @@ module.exports = function (zlib, snappy, crc32) {
 					return cb(err)
 				}
 				self.payload = data
+				self.checksum = crc32.unsigned(data)
 				self.compression = Message.compression.NONE
 				cb(null, data)
 			}
@@ -83,7 +84,7 @@ module.exports = function (zlib, snappy, crc32) {
 			)
 		}
 		else {
-			this.magic = 0
+			this.magic = 1
 			this.compression = 0
 			this.payload = buffer
 			this.checksum = crc32.unsigned(buffer)
@@ -95,9 +96,13 @@ module.exports = function (zlib, snappy, crc32) {
 		var m = new Message()
 		var payload = new Buffer(buffer.length - 10)
 		buffer.copy(payload, 0, 10)
-		m.magic = buffer.readUInt8(4)
-		m.compression = buffer.readUInt8(5)
-		m.checksum = buffer.readUInt32BE(6)
+
+		var i = 4
+		m.magic = buffer.readUInt8(i++)
+		if (m.magic) {
+			m.compression = buffer.readUInt8(i++)
+		}
+		m.checksum = buffer.readUInt32BE(i)
 		m.payload = payload // TODO maybe slice to save a copy
 		if (crc32.unsigned(payload) !== m.checksum) {
 			console.error("Mismatched checksum")
