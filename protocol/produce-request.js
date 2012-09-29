@@ -24,13 +24,8 @@ module.exports = function (
 		)
 	}
 
-	ProduceRequest.prototype._foo = function (stream, cb) {
-
-	}
-
 	ProduceRequest.prototype.serialize = function (stream) {
 		var payload
-
 		this._compress(
 			stream,
 			function (err, buffer) {

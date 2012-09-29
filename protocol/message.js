@@ -95,6 +95,31 @@ module.exports = function (
 		}
 	}
 
+	Message.prototype.unpack = function (cb) {
+		var payloads = []
+		if (this.compression) {
+			this.getData(
+				function (err, data) {
+					var offset = 0
+					while (offset < data.length) {
+						var len = data.readUInt32BE(offset)
+						payloads.push(
+							Message.parse(
+								data.slice(offset, offset + len + 4)
+							)
+							.payload
+						)
+						offset += (len + 4)
+					}
+					cb(payloads)
+				}
+			)
+		}
+		else {
+			cb([this.payload])
+		}
+	}
+
 	Message.parse = function (buffer) {
 		var m = new Message()
 		var payload = new Buffer(buffer.length - 10)
