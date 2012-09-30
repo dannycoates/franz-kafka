@@ -5,7 +5,8 @@ module.exports = function (
 	ReadableStream,
 	Receiver,
 	FetchRequest,
-	ProduceRequest) {
+	ProduceRequest,
+	OffsetsRequest) {
 
 	function Client(options) {
 		var self = this
@@ -60,6 +61,14 @@ module.exports = function (
 		request.messages = messages
 		//TODO topic
 		request.serialize(this.connection)
+	}
+
+	Client.prototype.offsets = function (time, maxCount, cb) {
+		var request = new OffsetsRequest()
+		request.time = time
+		request.maxCount = maxCount
+		request.serialize(this.connection)
+		this.receiver.push(request, cb)
 	}
 
 	return Client

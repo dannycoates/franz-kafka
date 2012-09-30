@@ -120,6 +120,25 @@ module.exports = function (
 		}
 	}
 
+	//  0                   1                   2                   3
+	//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	// |                             LENGTH                            |
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	// |     MAGIC       |  COMPRESSION  |           CHECKSUM          |
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	// |      CHECKSUM (cont.)           |           PAYLOAD           /
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+                             /
+	// /                         PAYLOAD (cont.)                       /
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+	// LENGTH = int32 // Length in bytes of entire message (excluding this field)
+	// MAGIC = int8 // 0 = COMPRESSION attribute byte does not exist (v0.6 and below)
+	//              // 1 = COMPRESSION attribute byte exists (v0.7 and above)
+	// COMPRESSION = int8 // 0 = none; 1 = gzip; 2 = snappy;
+	//                    // Only exists at all if MAGIC == 1
+	// CHECKSUM = int32  // CRC32 checksum of the PAYLOAD
+	// PAYLOAD = Bytes[] // Message content
 	Message.parse = function (buffer) {
 		var m = new Message()
 		var payload = new Buffer(buffer.length - 10)

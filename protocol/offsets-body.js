@@ -7,6 +7,20 @@ module.exports = function (
 	}
 	inherits(OffsetsBody, State)
 
+	//  0                   1                   2                   3
+	//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	// /                         RESPONSE HEADER                       /
+	// /                                                               /
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	// |                         NUMBER_OFFSETS                        |
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	// /                       OFFSETS (0 or more)                     /
+	// /                                                               /
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+	// NUMBER_OFFSETS = int32 // How many offsets are being returned
+	// OFFSETS = int64[] // List of offsets
 	OffsetsBody.prototype.parse = function () {
 		console.assert(this.complete())
 		var offsets = []
@@ -14,7 +28,15 @@ module.exports = function (
 		for (var i = 0; i < count; i++) {
 			var high = 4 + (i * 8)
 			var low = 4 + (i * 8) + 4
-			offsets.push([this.buffer.readUInt32BE(high),this.buffer.readUInt32BE(low)])
+			// its unlikely the offset will exceed 53 bits for a while.
+			// for now we'll use doubles because that's what we have
+			high = this.buffer.readUInt32BE(high)
+			low = this.buffer.readUInt32BE(low)
+			if (high > 2097151) { //2^21 - 1
+				throw new Error("Offset too big")
+			}
+			var offset = (high * 4294967296) + low
+			offsets.push(offset)
 		}
 		return offsets
 	}

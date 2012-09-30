@@ -9,7 +9,7 @@ var RequestHeader = require('./request-header')()
 var ResponseHeader = require('./response-header')(inherits, State)
 var FetchBody = require('./fetch-body')(inherits, State, Message)
 var OffsetsBody = require('./offsets-body')(inherits, State)
-var Response = require('./response')(ResponseHeader, FetchBody, OffsetsBody)
+var Response = require('./response')(RequestHeader, ResponseHeader, FetchBody, OffsetsBody)
 var Receiver = require('./receiver')(NullState, Response)
 var FetchRequest = require('./fetch-request')(RequestHeader)
 var OffsetsRequest = require('./offsets-request')(RequestHeader)
@@ -19,5 +19,6 @@ module.exports = {
 	Receiver: Receiver,
 	FetchRequest: FetchRequest,
 	ProduceRequest: ProduceRequest,
+	OffsetsRequest: OffsetsRequest,
 	Message: Message
 }

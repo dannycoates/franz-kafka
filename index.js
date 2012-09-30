@@ -10,6 +10,7 @@ var Client = require('./client')(
 	ReadableStream,
 	protocol.Receiver,
 	protocol.FetchRequest,
-	protocol.ProduceRequest)
+	protocol.ProduceRequest,
+	protocol.OffsetsRequest)
 
 module.exports = Client

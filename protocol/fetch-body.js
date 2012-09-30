@@ -8,6 +8,14 @@ module.exports = function (
 	}
 	inherits(FetchBody, State)
 
+	//  0                   1                   2                   3
+	//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	// /                          RESPONSE HEADER                      /
+	// /                                                               /
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	// /                        MESSAGES (0 or more)                   /
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 	FetchBody.prototype.parse = function () {
 		console.assert(this.complete())
 		var messages = []
