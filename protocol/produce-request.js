@@ -6,7 +6,7 @@ module.exports = function (
 		this.header = null
 		this.topic = topic || ""
 		this.partition = partition
-		this.messages = Array.isArray(messages) ? messages : [messages]
+		this.messages = messages || []
 	}
 
 	function messageToBuffer(m) { return m.toBuffer() }

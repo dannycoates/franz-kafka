@@ -3,6 +3,7 @@ module.exports = function (
 	inherits,
 	EventEmitter,
 	ReadableStream,
+	Message,
 	Receiver,
 	FetchRequest,
 	ProduceRequest,
@@ -54,7 +55,12 @@ module.exports = function (
 	}
 
 	Client.prototype.produce = function (topic, messages, partition) {
-		var request = new ProduceRequest(topic, messages, partition)
+		console.assert(messages)
+
+		if (!Array.isArray(messages)) {
+			messages = [messages]
+		}
+		var request = new ProduceRequest(topic, messages.map(Message.create), partition)
 		request.serialize(this.connection)
 	}
 

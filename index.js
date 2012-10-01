@@ -8,6 +8,7 @@ var Client = require('./client')(
 	inherits,
 	EventEmitter,
 	ReadableStream,
+	protocol.Message,
 	protocol.Receiver,
 	protocol.FetchRequest,
 	protocol.ProduceRequest,

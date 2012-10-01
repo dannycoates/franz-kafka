@@ -16,6 +16,22 @@ module.exports = function (
 		SNAPPY: 2
 	}
 
+	Message.create = function (data) {
+		if(!Buffer.isBuffer(data)) {
+			if (data instanceof Message) {
+				return data
+			}
+			data = new Buffer(data)
+		}
+
+		var m = new Message()
+		m.magic = 1
+		m.compression = Message.compression.NONE
+		m.payload = data
+		m.checksum = crc32.unsigned(data)
+		return m
+	}
+
 	Message.prototype.length = function () {
 		return this.payload.length + 6
 	}
