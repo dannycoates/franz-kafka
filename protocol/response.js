@@ -19,16 +19,15 @@ module.exports = function (
 	}
 
 	Response.prototype.complete = function () {
-		return done
+		return this.done
 	}
 
 	Response.prototype.read = function (stream) {
 		while (this.state.read(stream)) {
 			var result = this.state.next()
 			if (Array.isArray(result)) { // TODO: better
-				// something something
-				this.cb(result)
 				this.done = true
+				this.cb(result)
 				break;
 			}
 			else {

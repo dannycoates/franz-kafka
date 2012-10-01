@@ -1,10 +1,12 @@
 module.exports = function (
 	RequestHeader) {
 
-	function FetchRequest() {
+	function FetchRequest(topic, offset, partition, maxSize) {
 		this.header = null
-		this.offset = 0
-		this.maxSize = 0
+		this.topic = topic || ""
+		this.partition = partition || 0
+		this.offset = offset || 0
+		this.maxSize = maxSize || (1024 * 1024)
 	}
 
 	//  0                   1                   2                   3
@@ -35,7 +37,8 @@ module.exports = function (
 		this.header = new RequestHeader(
 			payload.length,
 			RequestHeader.types.FETCH,
-			"test")
+			this.topic,
+			this.partition)
 		this.header.serialize(stream)
 		return stream.write(payload)
 	}

@@ -2,9 +2,11 @@ module.exports = function (
 	RequestHeader,
 	Message) {
 
-	function ProduceRequest() {
+	function ProduceRequest(topic, messages, partition) {
 		this.header = null
-		this.messages = []
+		this.topic = topic || ""
+		this.partition = partition
+		this.messages = Array.isArray(messages) ? messages : [messages]
 	}
 
 	function messageToBuffer(m) { return m.toBuffer() }
@@ -39,15 +41,18 @@ module.exports = function (
 	// MESSAGES_LENGTH = int32 // Length in bytes of the MESSAGES section
 	// MESSAGES = Collection of MESSAGES
 	ProduceRequest.prototype.serialize = function (stream) {
+		var self = this
 		var payload
 		this._compress(
 			stream,
 			function (err, buffer) {
-				this.header = new RequestHeader(
+				self.header = new RequestHeader(
 					buffer.length + 4,
 					RequestHeader.types.PRODUCE,
-					'test')
-				this.header.serialize(stream)
+					self.topic,
+					self.partition
+				)
+				self.header.serialize(stream)
 
 				var mlen = new Buffer(4)
 				mlen.writeUInt32BE(buffer.length, 0)

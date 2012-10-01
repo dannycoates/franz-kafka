@@ -30,36 +30,31 @@ module.exports = function (
 	}
 	inherits(Client, EventEmitter)
 
-	Client.prototype.fetch = function (offset, maxSize) {
+	function parseMessages(messages) {
 		var self = this
-		var request = new FetchRequest()
-		request.offset = offset
-		request.maxSize = maxSize
-		//TODO something with these return values
-		request.serialize(this.connection)
-		this.receiver.push(
-			request,
-			function (messages) {
-				for (var i = 0; i < messages.length; i++) {
-					//XXX do we need to preserve the order?
-					messages[i].unpack(
-						function (payloads) {
-							payloads.forEach(
-								function (data) {
-									self.emit('message', data)
-								}
-							)
+		for (var i = 0; i < messages.length; i++) {
+			//XXX do we need to preserve the order?
+			messages[i].unpack(
+				function (payloads) {
+					payloads.forEach(
+						function (data) {
+							self.emit('message', data)
 						}
 					)
 				}
-			}
-		)
+			)
+		}
 	}
 
-	Client.prototype.produce = function (topic, messages) {
-		var request = new ProduceRequest()
-		request.messages = messages
-		//TODO topic
+	Client.prototype.fetch = function (topic, offset, partition, maxSize) {
+		var request = new FetchRequest(topic, offset, partition, maxSize)
+		//TODO something with these return values
+		request.serialize(this.connection)
+		this.receiver.push(request, parseMessages.bind(this))
+	}
+
+	Client.prototype.produce = function (topic, messages, partition) {
+		var request = new ProduceRequest(topic, messages, partition)
 		request.serialize(this.connection)
 	}
 
