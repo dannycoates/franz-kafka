@@ -3,6 +3,7 @@ var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
 var protocol = require('./protocol')
 var ReadableStream = require('readable-stream')
+var Topic = require('./topic')(inherits, EventEmitter)
 var Client = require('./client')(
 	net,
 	inherits,
@@ -12,6 +13,9 @@ var Client = require('./client')(
 	protocol.Receiver,
 	protocol.FetchRequest,
 	protocol.ProduceRequest,
-	protocol.OffsetsRequest)
+	protocol.OffsetsRequest
+)
 
-module.exports = Client
+var kafka = require('./kafka')(inherits, EventEmitter, Client, Topic)
+
+module.exports = kafka

@@ -27,7 +27,7 @@ module.exports = function (
 			var result = this.state.next()
 			if (Array.isArray(result)) { // TODO: better
 				this.done = true
-				this.cb(result)
+				this.cb(this.state.buffer.length, result)
 				break;
 			}
 			else {

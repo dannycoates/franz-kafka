@@ -31,27 +31,11 @@ module.exports = function (
 	}
 	inherits(Client, EventEmitter)
 
-	function parseMessages(messages) {
-		var self = this
-		for (var i = 0; i < messages.length; i++) {
-			//XXX do we need to preserve the order?
-			messages[i].unpack(
-				function (payloads) {
-					payloads.forEach(
-						function (data) {
-							self.emit('message', data)
-						}
-					)
-				}
-			)
-		}
-	}
-
-	Client.prototype.fetch = function (topic, offset, partition, maxSize) {
-		var request = new FetchRequest(topic, offset, partition, maxSize)
+	Client.prototype.fetch = function (topic, maxSize) {
+		var request = new FetchRequest(topic.name, topic.offset, topic.partition, maxSize)
 		//TODO something with these return values
 		request.serialize(this.connection)
-		this.receiver.push(request, parseMessages.bind(this))
+		this.receiver.push(request, topic.parseMessages.bind(topic))
 	}
 
 	Client.prototype.produce = function (topic, messages, partition) {
