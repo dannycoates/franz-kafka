@@ -1,7 +1,13 @@
-var kafka = require('./index')
+var Kafka = require('./index')
 
+var kafka = new Kafka({
+	zookeeper: 'localhost:2181'
+})
+
+kafka.connect()
 
 kafka.on('connect', function () {
+	console.log('connected')
 	var foo = kafka.createTopic('foo')
 	var bar = kafka.createTopic('bar')
 

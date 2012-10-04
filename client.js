@@ -44,7 +44,7 @@ module.exports = function (
 		if (!Array.isArray(messages)) {
 			messages = [messages]
 		}
-		var request = new ProduceRequest(topic, messages.map(Message.create), partition)
+		var request = new ProduceRequest(topic.name, messages.map(Message.create), partition)
 		request.serialize(this.connection)
 	}
 

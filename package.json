@@ -6,7 +6,8 @@
   "dependencies" : {
     "readable-stream": "*",
     "snappy": "*",
-    "buffer-crc32": "*"
+    "buffer-crc32": "*",
+    "zookeeper": "*"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

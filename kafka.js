@@ -1,23 +1,44 @@
 module.exports = function (
 	inherits,
 	EventEmitter,
-	Client,
-	Topic) {
+	Topic,
+	ZKConnector,
+	BrokerPool) {
 
-	function Kafka() {
+	function Kafka(options) {
+		this.topics = {}
+		this.options = options || {}
+		this.connector = null
+
+	}
+	inherits(Kafka, EventEmitter)
+
+	Kafka.prototype.connect = function () {
 		var self = this
-		this.client = new Client({
-			port: 9092
-		})
-		this.client.on(
-			'connect',
+		if (this.options.zookeeper) {
+			this.connector = new ZKConnector(this.options.zookeeper)
+		}
+		else if (this.options.brokers) {
+			this.connector = new BrokerPool()
+			this.options.brokers.forEach(
+				function (b) {
+					var broker = new Broker(b.name, b.host, b.port)
+					broker.once(
+						'connect',
+						function () {
+							self.connector.add(broker)
+						}
+					)
+				}
+			)
+		}
+		this.connector.once(
+			'brokerAdded',
 			function () {
 				self.emit('connect')
 			}
 		)
-		this.topics = {}
 	}
-	inherits(Kafka, EventEmitter)
 
 	Kafka.prototype.createTopic = function (name) {
 		var t = new Topic(name, this)
@@ -31,15 +52,15 @@ module.exports = function (
 		clearInterval(topic.interval)
 		setInterval(
 			function () {
-				self.client.fetch(topic)
+				self.connector.fetch(topic)
 			},
 			interval
 		)
 	}
 
 	Kafka.prototype.publish = function (topic, messages) {
-		this.client.produce(topic.name, messages)
+		this.connector.produce(topic, messages)
 	}
 
-	return new Kafka()
+	return Kafka
 }
