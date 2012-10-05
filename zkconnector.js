@@ -50,31 +50,31 @@ module.exports = function (
 				if (err) {
 					return self.emit('error', err)
 				}
-				self.getBrokers(
+				self._getBrokers(
 					function () {
-						self.getTopics()
+						self._getTopics()
 					}
 				)
 			}
 		)
 	}
 
-	ZKConnector.prototype.getBrokers = function (done) {
+	ZKConnector.prototype._getBrokers = function (done) {
 		this.zk.aw_get_children(
 			'/brokers/ids',
-			this.getBrokers.bind(this, noop),
-			this.brokersChanged.bind(this, done)
+			this._getBrokers.bind(this, this._getTopics.bind(this)),
+			this._brokersChanged.bind(this, done)
 		)
 	}
 
-	ZKConnector.prototype.brokersChanged = function (done, rc, err, brokerIds) {
+	ZKConnector.prototype._brokersChanged = function (done, rc, err, brokerIds) {
 		var self = this
 		if (brokerIds) {
 			async.forEachSeries(
 				brokerIds,
 				function (id, next) {
 					if (!self.brokerPool.contains(id)) {
-						self.addBroker(id, next)
+						self._addBroker(id, next)
 					}
 				},
 				function (err) {
@@ -85,21 +85,21 @@ module.exports = function (
 		}
 	}
 
-	ZKConnector.prototype.addBroker = function (id, done) {
+	ZKConnector.prototype._addBroker = function (id, done) {
 		var self = this
 		this.zk.a_get(
 			'/brokers/ids/' + id,
 			false,
 			function (rc, err, stat, data) {
 				if (data) {
-					self.createBroker(id, data.toString())
+					self._createBroker(id, data.toString())
 					done()
 				}
 			}
 		)
 	}
 
-	ZKConnector.prototype.createBroker = function (id, info) {
+	ZKConnector.prototype._createBroker = function (id, info) {
 		var self = this
 		var split = info.split(':')
 		if (split.length > 2) {
@@ -113,22 +113,21 @@ module.exports = function (
 		}
 	}
 
-	ZKConnector.prototype.getTopics = function () {
+	ZKConnector.prototype._getTopics = function () {
 		this.zk.aw_get_children(
 			'/brokers/topics',
-			this.getTopics.bind(this),
-			this.topicsChanged.bind(this)
+			this._getTopics.bind(this),
+			this._topicsChanged.bind(this)
 		)
 	}
 
-	ZKConnector.prototype.topicsChanged = function (rc, err, topics) {
+	ZKConnector.prototype._topicsChanged = function (rc, err, topics) {
 		var self = this
 		if (topics) {
-			console.log(topics)
 			async.forEachSeries(
 				topics,
 				function (topic, next) {
-					self.getTopicBrokers(topic, next)
+					self._getTopicBrokers(topic, next)
 				},
 				function (err) {
 
@@ -137,15 +136,15 @@ module.exports = function (
 		}
 	}
 
-	ZKConnector.prototype.getTopicBrokers = function (name, done) {
+	ZKConnector.prototype._getTopicBrokers = function (name, done) {
 		this.zk.a_get_children(
 			'/brokers/topics/' + name,
 			false,
-			this.getBrokerTopicPartitionCount.bind(this, name, done)
+			this._getBrokerTopicPartitionCount.bind(this, name, done)
 		)
 	}
 
-	ZKConnector.prototype.getBrokerTopicPartitionCount = function (name, done, rc, err, brokerIds) {
+	ZKConnector.prototype._getBrokerTopicPartitionCount = function (name, done, rc, err, brokerIds) {
 		var self = this
 		if (brokerIds) {
 			async.forEachSeries(

@@ -13,7 +13,7 @@ module.exports = function (
 	}
 	inherits(Kafka, EventEmitter)
 
-	Kafka.prototype.connect = function () {
+	Kafka.prototype.connect = function (onconnect) {
 		var self = this
 		if (this.options.zookeeper) {
 			this.connector = new ZKConnector(this.options.zookeeper)
@@ -38,6 +38,9 @@ module.exports = function (
 				self.emit('connect')
 			}
 		)
+		if (typeof(onconnect) === 'function') {
+			this.once('connect', onconnect)
+		}
 	}
 
 	Kafka.prototype.createTopic = function (name) {

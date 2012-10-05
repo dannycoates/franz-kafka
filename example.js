@@ -4,10 +4,8 @@ var kafka = new Kafka({
 	zookeeper: 'localhost:2181'
 })
 
-kafka.connect()
+kafka.connect(function () {
 
-kafka.on('connect', function () {
-	console.log('connected')
 	var foo = kafka.createTopic('foo')
 	var bar = kafka.createTopic('bar')
 

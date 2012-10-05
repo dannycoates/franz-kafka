@@ -15,7 +15,9 @@ module.exports = function (
 	}
 
 	TopicBrokers.prototype.add = function (broker) {
-		this.brokers.push(broker)
+		if (this.brokers.indexOf(broker) < 0) {
+			this.brokers.push(broker)
+		}
 	}
 
 	TopicBrokers.prototype.next = function () {
@@ -78,6 +80,11 @@ module.exports = function (
 		return !!this.get(id)
 	}
 
+	BrokerPool.prototype.random = function () {
+		var ids = Object.keys(this.brokers)
+		return this.brokers[ids[(Math.floor(Math.random() * ids.length))]]
+	}
+
 	BrokerPool.prototype.brokerForTopic = function (name) {
 		return (this.topicBrokers[name] || nullTopicBrokers).next()
 	}
@@ -87,7 +94,8 @@ module.exports = function (
 	}
 
 	BrokerPool.prototype.produce = function (topic, messages) {
-		this.brokerForTopic(topic.name).produce(topic, messages)
+		var broker = this.brokerForTopic(topic.name) || this.random()
+		broker.produce(topic, messages)
 	}
 
 	return BrokerPool
