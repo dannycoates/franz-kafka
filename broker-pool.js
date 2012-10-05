@@ -95,7 +95,10 @@ module.exports = function (
 
 	BrokerPool.prototype.produce = function (topic, messages) {
 		var broker = this.brokerForTopic(topic.name) || this.random()
-		broker.produce(topic, messages)
+		if (broker) {
+			return broker.produce(topic, messages)
+		}
+		return false
 	}
 
 	return BrokerPool

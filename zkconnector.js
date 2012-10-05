@@ -36,7 +36,6 @@ module.exports = function (
 				self.emit('brokerRemoved', b)
 			}
 		)
-		this.topicPartitions = {}
 		this.groupId = "foo"
 		this.consumerId = "bar"
 		this.connect()
@@ -50,24 +49,21 @@ module.exports = function (
 				if (err) {
 					return self.emit('error', err)
 				}
-				self._getBrokers(
-					function () {
-						self._getTopics()
-					}
-				)
+				self._getBrokers()
+				self._getTopics()
 			}
 		)
 	}
 
-	ZKConnector.prototype._getBrokers = function (done) {
+	ZKConnector.prototype._getBrokers = function () {
 		this.zk.aw_get_children(
 			'/brokers/ids',
-			this._getBrokers.bind(this, this._getTopics.bind(this)),
-			this._brokersChanged.bind(this, done)
+			this._getBrokers.bind(this),
+			this._brokersChanged.bind(this)
 		)
 	}
 
-	ZKConnector.prototype._brokersChanged = function (done, rc, err, brokerIds) {
+	ZKConnector.prototype._brokersChanged = function (rc, err, brokerIds) {
 		var self = this
 		if (brokerIds) {
 			async.forEachSeries(
@@ -79,7 +75,6 @@ module.exports = function (
 				},
 				function (err) {
 					self.brokerPool.removeBrokersNotIn(brokerIds)
-					done()
 				}
 			)
 		}
@@ -137,9 +132,9 @@ module.exports = function (
 	}
 
 	ZKConnector.prototype._getTopicBrokers = function (name, done) {
-		this.zk.a_get_children(
+		this.zk.aw_get_children(
 			'/brokers/topics/' + name,
-			false,
+			this._getTopicBrokers.bind(this, name, noop),
 			this._getBrokerTopicPartitionCount.bind(this, name, done)
 		)
 	}
@@ -150,20 +145,7 @@ module.exports = function (
 			async.forEachSeries(
 				brokerIds,
 				function (id, next) {
-					self.zk.a_get(
-						'/brokers/topics/' + name + '/' + id,
-						false,
-						function (rc, err, stat, data) {
-							if (data) {
-								self.brokerPool.setBrokerTopicPartitionCount(
-									id,
-									name,
-									+(data.toString())
-								)
-							}
-							next()
-						}
-					)
+					self._setBrokerTopicPartitionCount(name, id, next)
 				},
 				function (err) {
 					done()
@@ -172,12 +154,30 @@ module.exports = function (
 		}
 	}
 
+	ZKConnector.prototype._setBrokerTopicPartitionCount = function (name, id, done) {
+		var self = this
+		self.zk.aw_get(
+			'/brokers/topics/' + name + '/' + id,
+			self._setBrokerTopicPartitionCount.bind(self, name, id, noop),
+			function (rc, err, stat, data) {
+				if (data) {
+					self.brokerPool.setBrokerTopicPartitionCount(
+						id,
+						name,
+						+(data.toString())
+					)
+				}
+				done()
+			}
+		)
+	}
+
 	ZKConnector.prototype.fetch = function (topic) {
 
 	}
 
 	ZKConnector.prototype.produce = function (topic, messages) {
-		this.brokerPool.produce(topic, messages)
+		return this.brokerPool.produce(topic, messages)
 	}
 
 	return ZKConnector
