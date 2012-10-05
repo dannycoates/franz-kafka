@@ -47,8 +47,8 @@ module.exports = function (
 		}
 	}
 
-	Broker.prototype.setTopicPartitions = function (topic, count) {
-		this.topicPartitions[topic.name] = new TopicPartition(topic.name, count)
+	Broker.prototype.setTopicPartitions = function (name, count) {
+		this.topicPartitions[name] = new TopicPartition(name, count)
 	}
 
 	Broker.prototype.clearTopicPartitions = function () {

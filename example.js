@@ -12,13 +12,13 @@ kafka.on('connect', function () {
 	var bar = kafka.createTopic('bar')
 
 
-	setInterval(
-		function () {
-			foo.publish("the time is: " + Date.now())
-			bar.publish("a random number is: " + Math.random())
-		},
-		500
-	)
+	// setInterval(
+	// 	function () {
+	// 		foo.publish("the time is: " + Date.now())
+	// 		bar.publish("a random number is: " + Math.random())
+	// 	},
+	// 	500
+	// )
 
 
 	foo.on(

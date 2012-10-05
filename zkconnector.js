@@ -1,10 +1,13 @@
 module.exports = function (
+	async,
 	inherits,
 	EventEmitter,
 	ZooKeeper,
 	BrokerPool,
 	Broker
 	) {
+
+	function noop() {}
 
 	function ZKConnector(connect) {
 		var self = this
@@ -14,11 +17,23 @@ module.exports = function (
  			debug_level: ZooKeeper.ZOO_LOG_LEVEL_WARNING,
  			host_order_deterministic: false,
 		})
+		this.zk.once(
+			'close',
+			function () { console.log('zk close')}
+		)
 		this.brokerPool = new BrokerPool()
 		this.brokerPool.on(
 			'brokerAdded',
 			function (b) {
+				console.log('added ' + b.id)
 				self.emit('brokerAdded', b)
+			}
+		)
+		this.brokerPool.on(
+			'brokerRemoved',
+			function (b) {
+				console.log('removed ' + b.id)
+				self.emit('brokerRemoved', b)
 			}
 		)
 		this.topicPartitions = {}
@@ -35,30 +50,42 @@ module.exports = function (
 				if (err) {
 					return self.emit('error', err)
 				}
-				self.getTopicPartitions()
-				self.getBrokers()
+				self.getBrokers(
+					function () {
+						self.getTopics()
+					}
+				)
 			}
 		)
 	}
 
-	ZKConnector.prototype.getBrokers = function () {
-		this.zk.a_get_children('/brokers/ids', true, this.brokersChanged.bind(this))
+	ZKConnector.prototype.getBrokers = function (done) {
+		this.zk.aw_get_children(
+			'/brokers/ids',
+			this.getBrokers.bind(this, noop),
+			this.brokersChanged.bind(this, done)
+		)
 	}
 
-	ZKConnector.prototype.brokersChanged = function (rc, err, brokerIds) {
+	ZKConnector.prototype.brokersChanged = function (done, rc, err, brokerIds) {
+		var self = this
 		if (brokerIds) {
-			brokerIds = brokerIds.map(function (id) { return +id })
-			for (var i = 0; i < brokerIds.length; i++) {
-				var id = brokerIds[i]
-				if (!this.brokerPool.contains(id)) {
-					this.addBroker(id)
+			async.forEachSeries(
+				brokerIds,
+				function (id, next) {
+					if (!self.brokerPool.contains(id)) {
+						self.addBroker(id, next)
+					}
+				},
+				function (err) {
+					self.brokerPool.removeBrokersNotIn(brokerIds)
+					done()
 				}
-			}
-			this.brokerPool.removeBrokersNotIn(brokerIds)
+			)
 		}
 	}
 
-	ZKConnector.prototype.addBroker = function (id) {
+	ZKConnector.prototype.addBroker = function (id, done) {
 		var self = this
 		this.zk.a_get(
 			'/brokers/ids/' + id,
@@ -66,6 +93,7 @@ module.exports = function (
 			function (rc, err, stat, data) {
 				if (data) {
 					self.createBroker(id, data.toString())
+					done()
 				}
 			}
 		)
@@ -75,7 +103,7 @@ module.exports = function (
 		var self = this
 		var split = info.split(':')
 		if (split.length > 2) {
-			var broker = new Broker(id, split[1], +(split[2]))
+			var broker = new Broker(id, split[1], split[2])
 			broker.once(
 				'connect',
 				function () {
@@ -85,13 +113,63 @@ module.exports = function (
 		}
 	}
 
-	ZKConnector.prototype.getTopicPartitions = function () {
-		this.zk.a_get_children('/brokers/topics', true, this.topicPartitionsChanged.bind(this))
+	ZKConnector.prototype.getTopics = function () {
+		this.zk.aw_get_children(
+			'/brokers/topics',
+			this.getTopics.bind(this),
+			this.topicsChanged.bind(this)
+		)
 	}
 
-	ZKConnector.prototype.topicPartitionsChanged = function (rc, err, topics) {
+	ZKConnector.prototype.topicsChanged = function (rc, err, topics) {
+		var self = this
 		if (topics) {
-			//TODO it
+			console.log(topics)
+			async.forEachSeries(
+				topics,
+				function (topic, next) {
+					self.getTopicBrokers(topic, next)
+				},
+				function (err) {
+
+				}
+			)
+		}
+	}
+
+	ZKConnector.prototype.getTopicBrokers = function (name, done) {
+		this.zk.a_get_children(
+			'/brokers/topics/' + name,
+			false,
+			this.getBrokerTopicPartitionCount.bind(this, name, done)
+		)
+	}
+
+	ZKConnector.prototype.getBrokerTopicPartitionCount = function (name, done, rc, err, brokerIds) {
+		var self = this
+		if (brokerIds) {
+			async.forEachSeries(
+				brokerIds,
+				function (id, next) {
+					self.zk.a_get(
+						'/brokers/topics/' + name + '/' + id,
+						false,
+						function (rc, err, stat, data) {
+							if (data) {
+								self.brokerPool.setBrokerTopicPartitionCount(
+									id,
+									name,
+									+(data.toString())
+								)
+							}
+							next()
+						}
+					)
+				},
+				function (err) {
+					done()
+				}
+			)
 		}
 	}
 

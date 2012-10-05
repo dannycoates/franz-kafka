@@ -1,4 +1,5 @@
 var net = require('net')
+var async = require('async')
 var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
 var protocol = require('./protocol')
@@ -18,7 +19,7 @@ var Client = require('./client')(
 )
 var Broker = require('./broker')(inherits, EventEmitter, Client)
 var BrokerPool = require('./broker-pool.js')(inherits, EventEmitter)
-var ZKConnector = require('./zkconnector')(inherits, EventEmitter, ZooKeeper, BrokerPool, Broker)
+var ZKConnector = require('./zkconnector')(async, inherits, EventEmitter, ZooKeeper, BrokerPool, Broker)
 
 var kafka = require('./kafka')(inherits, EventEmitter, Topic, ZKConnector, BrokerPool)
 
