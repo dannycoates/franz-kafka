@@ -1,6 +1,7 @@
 module.exports = function (
 	inherits,
-	State) {
+	State,
+	int53) {
 
 	function OffsetsBody(bytes) {
 		State.call(this, bytes)
@@ -26,17 +27,10 @@ module.exports = function (
 		var offsets = []
 		var count = this.buffer.readUInt32BE(0)
 		for (var i = 0; i < count; i++) {
-			var high = 4 + (i * 8)
-			var low = 4 + (i * 8) + 4
+			var offset = 4 + (i * 8)
 			// its unlikely the offset will exceed 53 bits for a while.
 			// for now we'll use doubles because that's what we have
-			high = this.buffer.readUInt32BE(high)
-			low = this.buffer.readUInt32BE(low)
-			if (high > 2097151) { //2^21 - 1
-				throw new Error("Offset too big")
-			}
-			var offset = (high * 4294967296) + low
-			offsets.push(offset)
+			offsets.push(int53.readUInt64BE(this.buffer, offset))
 		}
 		return offsets
 	}

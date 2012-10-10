@@ -1,5 +1,6 @@
 module.exports = function (
-	RequestHeader) {
+	RequestHeader,
+	int53) {
 
 	function FetchRequest(topic, offset, partition, maxSize) {
 		this.header = null
@@ -26,19 +27,14 @@ module.exports = function (
 	// MAX_SIZE = int32 // MAX_SIZE of the message set to return
 	FetchRequest.prototype.serialize = function (stream) {
 		var payload = new Buffer(12)
-		var high = 0
-		var low = this.offset & 4294967295 //0xFFFFFFFF
-		if (this.offset > 4294967295) {
-			high = Math.floor((this.offset - low) / 4294967295)
-		}
-		payload.writeUInt32BE(high, 0)
-		payload.writeUInt32BE(low, 4)
+		int53.writeUInt64BE(this.offset, payload)
 		payload.writeUInt32BE(this.maxSize, 8)
 		this.header = new RequestHeader(
 			payload.length,
 			RequestHeader.types.FETCH,
 			this.topic,
-			this.partition)
+			this.partition
+		)
 		this.header.serialize(stream)
 		return stream.write(payload)
 	}

@@ -4,6 +4,7 @@
   "description": "Kafka Client http://incubator.apache.org/kafka/",
   "main": "index.js",
   "dependencies" : {
+    "int53": "*",
     "async": "*",
     "readable-stream": "*",
     "snappy": "*",

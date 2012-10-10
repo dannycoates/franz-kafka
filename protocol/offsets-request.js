@@ -1,5 +1,6 @@
 module.exports = function (
-	RequestHeader) {
+	RequestHeader,
+	int53) {
 
 	function OffsetsRequest() {
 		this.header = null
@@ -26,17 +27,7 @@ module.exports = function (
 	// MAX_NUMBER = int32 // Return up to this many offsets
 	OffsetsRequest.prototype.serialize =function (stream) {
 		var payload = new Buffer(12)
-		var high = 0
-		var low = this.time & 4294967295 //0xFFFFFFFF
-		if (this.time > 4294967295) {
-			high = Math.floor((this.time - low) / 4294967295)
-		}
-		else if (this.time < 0) { // for the -1 and -2 special cases
-			high = 4294967295
-			low = 4294967296 + this.time
-		}
-		payload.writeUInt32BE(high, 0)
-		payload.writeUInt32BE(low, 4)
+		int53.writeInt64BE(this.time, payload)
 		payload.writeUInt32BE(this.maxCount, 8)
 		this.header = new RequestHeader(
 			payload.length,
