@@ -12,6 +12,7 @@ module.exports = function (inherits) {
 	NullState.prototype.read = function () { return false }
 
 	State.nullState = new NullState()
+	State.doneState = State.nullState //synonym for clarity
 
 	State.prototype.complete = function () {
 		return this.remainingBytes === 0

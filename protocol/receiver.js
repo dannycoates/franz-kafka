@@ -34,7 +34,10 @@ module.exports = function (
 
 	Receiver.prototype.push = function (request, cb) {
 		if (this.closed) { return false } // or something
-		this.queue.push(request.response(cb))
+		var response = request.response(cb)
+		if (response !== State.nullState) {
+			this.queue.push(response)
+		}
 		return true
 	}
 

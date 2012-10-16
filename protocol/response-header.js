@@ -10,17 +10,6 @@ module.exports = function (
 	}
 	inherits(ResponseHeader, State)
 
-	//  0                   1                   2                   3
-	//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
-	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-	// |                        RESPONSE_LENGTH                        |
-	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-	// |         ERROR_CODE            |
-	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
-
-	// RESPONSE_LENGTH = int32 // Length in bytes of entire response (excluding this field)
-	// ERROR_CODE = int16 // See table below.
-
 	// ================  =====  ===================================================
 	// ERROR_CODE        VALUE  DEFINITION
 	// ================  =====  ===================================================
@@ -33,6 +22,39 @@ module.exports = function (
 	// InvalidFetchSize    4    The size you requested for fetching is smaller than
 	//                          the message you're trying to fetch.
 	// ================  =====  ===================================================
+
+	function toError(errno) {
+		var msg
+		switch (errno) {
+			case 1:
+				msg = "OffsetOutOfRange"
+				break;
+			case 2:
+				msg = "InvalidMessage"
+				break;
+			case 3:
+				msg = "WrongPartition"
+				break;
+			case 4:
+				msg = "InvalidFetchSize"
+				break;
+			default:
+				msg = "Unknown Error " + errno
+				break;
+		}
+		return new Error(msg)
+	}
+
+	//  0                   1                   2                   3
+	//  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	// |                        RESPONSE_LENGTH                        |
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+	// |         ERROR_CODE            |
+	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+	// RESPONSE_LENGTH = int32 // Length in bytes of entire response (excluding this field)
+	// ERROR_CODE = int16
 	ResponseHeader.prototype.parse = function () {
 		console.assert(this.complete())
 		this.length = this.buffer.readUInt32BE(0)
@@ -42,14 +64,13 @@ module.exports = function (
 	ResponseHeader.prototype.next = function () {
 		this.parse()
 		if (this.errno !== 0) {
-			return State.nullState
+			return State.doneState
 		}
 		return new this.ResponseBody(this.length - 2)
 	}
 
-	ResponseHeader.prototype.body = function () {
-		//TODO return an Error
-		return null
+	ResponseHeader.prototype.error = function () {
+		return toError(this.errno)
 	}
 
 	return ResponseHeader

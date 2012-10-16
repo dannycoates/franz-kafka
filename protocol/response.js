@@ -15,9 +15,13 @@ module.exports = function (
 	Response.prototype.read = function (stream) {
 		while (this.state.read(stream)) {
 			var next = this.state.next()
-			if (next === State.nullState) {
+			if (next === State.doneState) {
 				this.done = true
-				this.cb(next.error(), this.state.buffer.length, this.state.body())
+				this.cb(
+					this.state.error(),
+					this.state.buffer.length,
+					this.state.body()
+				)
 				break;
 			}
 			else {
