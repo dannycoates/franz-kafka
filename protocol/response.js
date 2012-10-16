@@ -1,20 +1,9 @@
 module.exports = function (
-	RequestHeader,
-	ResponseHeader,
-	FetchBody,
-	OffsetsBody) {
+	ResponseHeader) {
 
-	function Response(request, cb) {
-		switch (request.header.type) {
-			case RequestHeader.types.FETCH:
-				this.state = new ResponseHeader(FetchBody)
-				break;
-			case RequestHeader.types.OFFSETS:
-				this.state = new ResponseHeader(OffsetsBody)
-				break;
-		}
+	function Response(ResponseBody, cb) {
+		this.state = new ResponseHeader(ResponseBody)
 		this.cb = cb
-		this.request = request
 		this.done = false
 	}
 

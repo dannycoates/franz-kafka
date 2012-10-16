@@ -1,11 +1,12 @@
 module.exports = function (
 	RequestHeader,
+	Response,
+	OffsetsBody,
 	int53) {
 
-	function OffsetsRequest() {
-		this.header = null
-		this.time = 0
-		this.maxCount = 0
+	function OffsetsRequest(time, maxCount) {
+		this.time = time
+		this.maxCount = maxCount
 	}
 
 
@@ -29,12 +30,16 @@ module.exports = function (
 		var payload = new Buffer(12)
 		int53.writeInt64BE(this.time, payload)
 		payload.writeUInt32BE(this.maxCount, 8)
-		this.header = new RequestHeader(
+		var header = new RequestHeader(
 			payload.length,
 			RequestHeader.types.OFFSETS,
 			"test")
-		this.header.serialize(stream)
+		header.serialize(stream)
 		return stream.write(payload)
+	}
+
+	OffsetsRequest.prototype.response = function (cb) {
+		return new Response(OffsetsBody, cb)
 	}
 
 	return OffsetsRequest

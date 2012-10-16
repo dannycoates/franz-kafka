@@ -1,9 +1,10 @@
 module.exports = function (
 	RequestHeader,
+	Response,
+	FetchBody,
 	int53) {
 
 	function FetchRequest(topic, offset, partition, maxSize) {
-		this.header = null
 		this.topic = topic || ""
 		this.partition = partition || 0
 		this.offset = offset || 0
@@ -29,14 +30,18 @@ module.exports = function (
 		var payload = new Buffer(12)
 		int53.writeUInt64BE(this.offset, payload)
 		payload.writeUInt32BE(this.maxSize, 8)
-		this.header = new RequestHeader(
+		var header = new RequestHeader(
 			payload.length,
 			RequestHeader.types.FETCH,
 			this.topic,
 			this.partition
 		)
-		this.header.serialize(stream)
+		header.serialize(stream)
 		return stream.write(payload)
+	}
+
+	FetchRequest.prototype.response = function (cb) {
+		return new Response(FetchBody)
 	}
 
 	return FetchRequest

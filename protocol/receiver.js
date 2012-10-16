@@ -1,6 +1,5 @@
 module.exports = function (
-	NullState,
-	Response) {
+	NullState) {
 
 	var nullState = new NullState()
 
@@ -37,7 +36,7 @@ module.exports = function (
 
 	Receiver.prototype.push = function (request, cb) {
 		if (this.closed) { return false } // or something
-		this.queue.push(new Response(request, cb))
+		this.queue.push(request.response(cb))
 		return true
 	}
 

@@ -31,11 +31,16 @@ module.exports = function (
 	}
 	inherits(Client, EventEmitter)
 
-	Client.prototype.fetch = function (topic, maxSize) {
-		var request = new FetchRequest(topic.name, topic.offset, topic.partition, maxSize)
-		//TODO something with these return values
+	Client.prototype._send = function (request, cb) {
 		request.serialize(this.connection)
-		this.receiver.push(request, topic.parseMessages.bind(topic))
+		this.receiver.push(request, cb)
+	}
+
+	Client.prototype.fetch = function (topic, maxSize) {
+		return this._send(
+			new FetchRequest(topic.name, topic.offset, topic.partition, maxSize),
+			topic.parseMessages.bind(topic)
+		)
 	}
 
 	Client.prototype.produce = function (topic, messages, partition) {
@@ -44,16 +49,17 @@ module.exports = function (
 		if (!Array.isArray(messages)) {
 			messages = [messages]
 		}
-		var request = new ProduceRequest(topic.name, messages.map(Message.create), partition)
-		request.serialize(this.connection)
+		this._send(
+			new ProduceRequest(
+				topic.name,
+				messages.map(Message.create),
+				partition
+			)
+		)
 	}
 
 	Client.prototype.offsets = function (time, maxCount, cb) {
-		var request = new OffsetsRequest()
-		request.time = time
-		request.maxCount = maxCount
-		request.serialize(this.connection)
-		this.receiver.push(request, cb)
+		this._send(new OffsetsRequest(time, maxCount), cb)
 	}
 
 	return Client

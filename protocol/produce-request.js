@@ -1,9 +1,9 @@
 module.exports = function (
 	RequestHeader,
-	Message) {
+	Message,
+	NullState) {
 
 	function ProduceRequest(topic, messages, partition) {
-		this.header = null
 		this.topic = topic || ""
 		this.partition = partition
 		this.messages = messages || []
@@ -46,13 +46,13 @@ module.exports = function (
 		this._compress(
 			stream,
 			function (err, buffer) {
-				self.header = new RequestHeader(
+				var header = new RequestHeader(
 					buffer.length + 4,
 					RequestHeader.types.PRODUCE,
 					self.topic,
 					self.partition
 				)
-				self.header.serialize(stream)
+				header.serialize(stream)
 
 				var mlen = new Buffer(4)
 				mlen.writeUInt32BE(buffer.length, 0)
@@ -61,6 +61,10 @@ module.exports = function (
 				stream.write(buffer)
 			}
 		)
+	}
+
+	ProduceRequest.prototype.response = function (cb) {
+		return new NullState()
 	}
 
 	return ProduceRequest

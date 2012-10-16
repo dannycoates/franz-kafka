@@ -13,7 +13,6 @@ module.exports = function () {
 		this.header.writeUInt16BE(topicLength, 6)
 		this.header.write(topic, 8)
 		this.header.writeUInt32BE(partition, this.header.length - 4)
-		this.type = type
 	}
 
 	RequestHeader.types = {
