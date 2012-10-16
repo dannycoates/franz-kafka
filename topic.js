@@ -11,7 +11,10 @@ module.exports = function (
 	}
 	inherits(Topic, EventEmitter)
 
-	Topic.prototype.parseMessages = function(length, messages) {
+	Topic.prototype.parseMessages = function(err, length, messages) {
+		if (err) {
+			return this.emit('error', err)
+		}
 		var self = this
 		this.offset += length
 		for (var i = 0; i < messages.length; i++) {

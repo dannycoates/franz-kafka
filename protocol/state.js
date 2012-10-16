@@ -1,9 +1,17 @@
-module.exports = function () {
+module.exports = function (inherits) {
 
 	function State(bytes) {
 		this.remainingBytes = bytes
 		this.buffer = new Buffer(bytes)
 	}
+
+	function NullState() {
+		State.call(this, 0)
+	}
+	inherits(NullState, State)
+	NullState.prototype.read = function () { return false }
+
+	State.nullState = new NullState()
 
 	State.prototype.complete = function () {
 		return this.remainingBytes === 0
@@ -19,11 +27,15 @@ module.exports = function () {
 		return this.complete()
 	}
 
-	State.prototype.next = function () { return this }
+	State.prototype.next = function () { return State.nullState }
 
 	State.prototype.toString = function () {
 		return "State " + this.complete() + " " + this.buffer.toString('hex')
 	}
+
+	State.prototype.body = function () { return null }
+
+	State.prototype.error = function () { return null }
 
 	return State
 }

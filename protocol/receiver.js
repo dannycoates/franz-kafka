@@ -1,7 +1,5 @@
 module.exports = function (
-	NullState) {
-
-	var nullState = new NullState()
+	State) {
 
 	function Receiver(stream) {
 		var self = this
@@ -17,12 +15,12 @@ module.exports = function (
 			}
 		)
 		this.queue = []
-		this.current = nullState
+		this.current = State.nullState
 		this.closed = false
 	}
 
 	Receiver.prototype.next = function () {
-		this.current = this.queue.shift() || nullState
+		this.current = this.queue.shift() || State.nullState
 	}
 
 	Receiver.prototype.read = function () {

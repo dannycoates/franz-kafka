@@ -28,7 +28,7 @@ module.exports = function (
 		return messages
 	}
 
-	FetchBody.prototype.next = function () {
+	FetchBody.prototype.body = function () {
 		return this.parse()
 	}
 

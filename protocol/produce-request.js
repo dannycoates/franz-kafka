@@ -1,7 +1,7 @@
 module.exports = function (
 	RequestHeader,
 	Message,
-	NullState) {
+	State) {
 
 	function ProduceRequest(topic, messages, partition) {
 		this.topic = topic || ""
@@ -64,7 +64,7 @@ module.exports = function (
 	}
 
 	ProduceRequest.prototype.response = function (cb) {
-		return new NullState()
+		return State.nullState
 	}
 
 	return ProduceRequest

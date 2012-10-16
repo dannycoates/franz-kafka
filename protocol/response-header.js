@@ -41,7 +41,15 @@ module.exports = function (
 
 	ResponseHeader.prototype.next = function () {
 		this.parse()
+		if (this.errno !== 0) {
+			return State.nullState
+		}
 		return new this.ResponseBody(this.length - 2)
+	}
+
+	ResponseHeader.prototype.body = function () {
+		//TODO return an Error
+		return null
 	}
 
 	return ResponseHeader

@@ -1,4 +1,5 @@
 module.exports = function (
+	State,
 	ResponseHeader) {
 
 	function Response(ResponseBody, cb) {
@@ -13,14 +14,14 @@ module.exports = function (
 
 	Response.prototype.read = function (stream) {
 		while (this.state.read(stream)) {
-			var result = this.state.next()
-			if (Array.isArray(result)) { // TODO: better
+			var next = this.state.next()
+			if (next === State.nullState) {
 				this.done = true
-				this.cb(this.state.buffer.length, result)
+				this.cb(next.error(), this.state.buffer.length, this.state.body())
 				break;
 			}
 			else {
-				this.state = result
+				this.state = next
 			}
 		}
 		return this.done

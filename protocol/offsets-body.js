@@ -35,7 +35,7 @@ module.exports = function (
 		return offsets
 	}
 
-	OffsetsBody.prototype.next = function () {
+	OffsetsBody.prototype.body = function () {
 		return this.parse()
 	}
 
