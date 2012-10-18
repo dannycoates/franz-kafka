@@ -6,26 +6,8 @@ var kafka = new Kafka({
 
 kafka.connect(function () {
 
-	var foo = kafka.createTopic('foo')
-	var bar = kafka.createTopic('bar')
-
-
-	// setInterval(
-	// 	function () {
-	// 		foo.publish("the time is: " + Date.now())
-	// 		bar.publish("a random number is: " + Math.random())
-	// 	},
-	// 	500
-	// )
-
-
-	foo.on(
-		'message',
-		function (m) {
-			console.log("foo offset: " + foo.offset)
-			console.log(m.toString())
-		}
-	)
+	var foo = kafka.topic('foo')
+	var bar = kafka.consume('bar', 200)
 
 	bar.on(
 		'message',
@@ -35,8 +17,13 @@ kafka.connect(function () {
 		}
 	)
 
-	foo.consume(200)
-	bar.consume(300)
+	setInterval(
+		function () {
+			foo.publish("the time is: " + Date.now())
+			bar.publish("a random number is: " + Math.random())
+		},
+		500
+	)
 
 	}
 )

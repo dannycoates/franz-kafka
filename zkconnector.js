@@ -1,4 +1,5 @@
 module.exports = function (
+	os,
 	async,
 	inherits,
 	EventEmitter,
@@ -9,10 +10,18 @@ module.exports = function (
 
 	function noop() {}
 
-	function ZKConnector(connect) {
+	function genConsumerId(groupId) {
+		return groupId + '_' + os.hostname() + '-' + Date.now() + '-' + "DEADBEEF"
+	}
+
+	// options: {
+	//   zookeeper:
+	//   groupId:
+	// }
+	function ZKConnector(options) {
 		var self = this
 		this.zk = new ZooKeeper({
-			connect: connect,
+			connect: options.zookeeper,
 			timeout: 200000,
  			debug_level: ZooKeeper.ZOO_LOG_LEVEL_WARNING,
  			host_order_deterministic: false,
@@ -36,8 +45,8 @@ module.exports = function (
 				self.emit('brokerRemoved', b)
 			}
 		)
-		this.groupId = "foo"
-		this.consumerId = "bar"
+		this.groupId = options.groupId
+		this.consumerId = genConsumerId(this.groupId)
 		this.connect()
 	}
 	inherits(ZKConnector, EventEmitter)
@@ -170,6 +179,10 @@ module.exports = function (
 				done()
 			}
 		)
+	}
+
+	ZKConnector.prototype.connectConsumer = function (cb) {
+
 	}
 
 	ZKConnector.prototype.fetch = function (topic) {

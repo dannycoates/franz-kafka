@@ -35,8 +35,19 @@ module.exports = function (
 		this.kafka.publish(this, messages)
 	}
 
-	Topic.prototype.consume = function (interval) {
-		this.kafka.consume(this, interval)
+	Topic.prototype.consume = function (interval) { //TODO: starting offset?
+		var self = this
+		this.kafka.connectConsumer(
+			function () {
+				clearInterval(self.interval)
+				self.interval = setInterval(
+					function () {
+						self.kafka.fetch(self)
+					},
+					interval
+				)
+			}
+		)
 	}
 
 	return Topic

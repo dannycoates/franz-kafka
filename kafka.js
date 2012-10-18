@@ -16,7 +16,7 @@ module.exports = function (
 	Kafka.prototype.connect = function (onconnect) {
 		var self = this
 		if (this.options.zookeeper) {
-			this.connector = new ZKConnector(this.options.zookeeper)
+			this.connector = new ZKConnector(this.options)
 		}
 		else if (this.options.brokers) {
 			this.connector = new BrokerPool()
@@ -43,22 +43,24 @@ module.exports = function (
 		}
 	}
 
-	Kafka.prototype.createTopic = function (name) {
-		var t = new Topic(name, this)
-		this.topics[name] = t
-		return t
+	Kafka.prototype.connectConsumer = function (cb) {
+		this.connector.connectConsumer(cb)
 	}
 
-	Kafka.prototype.consume = function (topic, interval) {
-		//TODO: a better interval method
-		var self = this
-		clearInterval(topic.interval)
-		setInterval(
-			function () {
-				self.connector.fetch(topic)
-			},
-			interval
-		)
+	Kafka.prototype.topic = function (name) {
+		var topic = this.topics[name] || new Topic(name, this)
+		this.topics[name] = topic
+		return topic
+	}
+
+	Kafka.prototype.fetch = function (topic) {
+		this.connector.fetch(topic)
+	}
+
+	Kafka.prototype.consume = function (name, interval) {
+		var topic = this.topic(name)
+		topic.consume(interval || 1000)
+		return topic
 	}
 
 	Kafka.prototype.publish = function (topic, messages) {
