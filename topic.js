@@ -2,12 +2,13 @@ module.exports = function (
 	inherits,
 	EventEmitter) {
 
-	function Topic(name, kafka) {
+	function Topic(name, connector) {
 		this.offset = 0
 		this.name = name || ''
 		this.partitions = []
-		this.kafka = kafka
+		this.connector = connector
 		this.interval = null
+		this.ready = true
 	}
 	inherits(Topic, EventEmitter)
 
@@ -31,18 +32,25 @@ module.exports = function (
 		}
 	}
 
+	Topic.prototype.setReady = function (ready) {
+		if(ready && !this.ready) {
+			this.emit('ready')
+		}
+		this.ready = ready
+	}
+
 	Topic.prototype.publish = function (messages) {
-		this.kafka.publish(this, messages)
+		return this.connector.publish(this, messages)
 	}
 
 	Topic.prototype.consume = function (interval) { //TODO: starting offset?
 		var self = this
-		this.kafka.connectConsumer(
+		this.connector.connectConsumer(
 			function () {
 				clearInterval(self.interval)
 				self.interval = setInterval(
 					function () {
-						self.kafka.fetch(self)
+						self.connector.fetch(self)
 					},
 					interval
 				)

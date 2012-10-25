@@ -45,6 +45,12 @@ module.exports = function (
 				self.emit('brokerRemoved', b)
 			}
 		)
+		this.brokerPool.on(
+			'brokerReady',
+			function (b) {
+				self.emit('brokerReady', b)
+			}
+		)
 		this.groupId = options.groupId
 		this.consumerId = genConsumerId(this.groupId)
 		this.connect()

@@ -25,16 +25,35 @@ module.exports = function (
 		return this.brokers[this.current]
 	}
 
+	TopicBrokers.prototype.nextReady = function () {
+		for (var i = 0; i < this.brokers.length; i++) {
+			var b = this.next()
+			if (b.ready()) {
+				break
+			}
+		}
+		return b
+	}
+
+	TopicBrokers.prototype.someReady = function () {
+		return this.brokers.some(function (b) { return b.ready() })
+	}
+
 	var nullTopicBrokers = new TopicBrokers()
 
 	function BrokerPool() {
+		var self = this
 		this.brokers = {}
 		this.topicBrokers = {}
+		this.brokerReady = function () {
+			self.emit('brokerReady', this)
+		}
 	}
 	inherits(BrokerPool, EventEmitter)
 
 	BrokerPool.prototype.add = function (broker) {
 		this.brokers[broker.id] = broker
+		broker.on('ready', this.brokerReady)
 		this.emit('brokerAdded', broker)
 	}
 
@@ -47,6 +66,7 @@ module.exports = function (
 				tb.remove(b)
 			}
 		)
+		b.removeListener('ready', this.brokerReady)
 		delete this.brokers[id]
 		this.emit('brokerRemoved', b)
 	}
@@ -80,13 +100,21 @@ module.exports = function (
 		return !!this.get(id)
 	}
 
-	BrokerPool.prototype.random = function () {
+	BrokerPool.prototype.randomReady = function () {
 		var ids = Object.keys(this.brokers)
-		return this.brokers[ids[(Math.floor(Math.random() * ids.length))]]
+		var n = (Math.floor(Math.random() * ids.length))
+		for (var i = 0; i < ids.length; i++) {
+			var b = this.brokers[ids[n]]
+			if (b.ready()) {
+				break
+			}
+			n = (n + 1) % ids.length
+		}
+		return b
 	}
 
 	BrokerPool.prototype.brokerForTopic = function (name) {
-		return (this.topicBrokers[name] || nullTopicBrokers).next()
+		return (this.topicBrokers[name] || nullTopicBrokers).nextReady()
 	}
 
 	BrokerPool.prototype.fetch = function () {
@@ -94,11 +122,19 @@ module.exports = function (
 	}
 
 	BrokerPool.prototype.produce = function (topic, messages) {
-		var broker = this.brokerForTopic(topic.name) || this.random()
+		var broker = this.brokerForTopic(topic.name)
 		if (broker) {
-			return broker.produce(topic, messages)
+			var ready = broker.produce(topic, messages) ||
+				this.topicBrokers[topic.name].someReady()
+			topic.setReady(ready)
+			return ready
 		}
-		return false
+		// new topic
+		// XXX im not sure how to best handle this case.
+		// for instance if you blast a bunch of produces
+		// before the broker-partition assignments arrive
+		this.randomReady().produce(topic, messages)
+		return true
 	}
 
 	return BrokerPool

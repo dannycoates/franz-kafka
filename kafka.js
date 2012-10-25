@@ -38,6 +38,18 @@ module.exports = function (
 				self.emit('connect')
 			}
 		)
+		this.connector.on(
+			'brokerReady',
+			function (b) {
+				var topics = Object.keys(this.topics)
+				for (var i = 0; i < topics.length; i++) {
+					var name = topics[i]
+					if (b.hasTopic(name)) {
+						this.topics[name].setReady(true)
+					}
+				}
+			}
+		)
 		if (typeof(onconnect) === 'function') {
 			this.once('connect', onconnect)
 		}
@@ -48,7 +60,7 @@ module.exports = function (
 	}
 
 	Kafka.prototype.topic = function (name) {
-		var topic = this.topics[name] || new Topic(name, this)
+		var topic = this.topics[name] || new Topic(name, this.connector)
 		this.topics[name] = topic
 		return topic
 	}

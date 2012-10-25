@@ -13,7 +13,7 @@ module.exports = function (
 	function sumLength(t, b) { return t + b.length }
 
 
-	ProduceRequest.prototype._compress = function (stream, cb) {
+	ProduceRequest.prototype._compress = function (cb) {
 		var messageBuffers = this.messages.map(messageToBuffer)
 		var messagesLength = messageBuffers.reduce(sumLength, 0)
 		var wrapper = new Message()
@@ -40,11 +40,10 @@ module.exports = function (
 	//
 	// MESSAGES_LENGTH = int32 // Length in bytes of the MESSAGES section
 	// MESSAGES = Collection of MESSAGES
-	ProduceRequest.prototype.serialize = function (stream) {
+	ProduceRequest.prototype.serialize = function (stream, cb) {
 		var self = this
 		var payload
 		this._compress(
-			stream,
 			function (err, buffer) {
 				var header = new RequestHeader(
 					buffer.length + 4,
@@ -58,7 +57,7 @@ module.exports = function (
 				mlen.writeUInt32BE(buffer.length, 0)
 				stream.write(mlen)
 
-				stream.write(buffer)
+				cb(stream.write(buffer))
 			}
 		)
 	}

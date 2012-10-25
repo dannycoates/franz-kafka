@@ -25,6 +25,14 @@ module.exports = function (
 				self.connection = null
 			}
 		)
+		this.connection.on(
+			'drain',
+			function () {
+				self.ready = true
+				self.emit('ready')
+			}
+		)
+		this.ready = true
 		this.readableSteam = new ReadableStream()
 		this.readableSteam.wrap(this.connection)
 		this.receiver = new Receiver(this.readableSteam)
@@ -32,8 +40,17 @@ module.exports = function (
 	inherits(Client, EventEmitter)
 
 	Client.prototype._send = function (request, cb) {
-		request.serialize(this.connection)
-		this.receiver.push(request, cb)
+		var self = this
+		request.serialize(
+			this.connection,
+			function (written) {
+				if (!written) {
+					self.ready = false
+				}
+				self.receiver.push(request, cb)
+			}
+		)
+		return this.ready
 	}
 
 	Client.prototype.fetch = function (topic, maxSize) {
@@ -49,7 +66,7 @@ module.exports = function (
 		if (!Array.isArray(messages)) {
 			messages = [messages]
 		}
-		this._send(
+		return this._send(
 			new ProduceRequest(
 				topic.name,
 				messages.map(Message.create),
@@ -59,7 +76,7 @@ module.exports = function (
 	}
 
 	Client.prototype.offsets = function (time, maxCount, cb) {
-		this._send(new OffsetsRequest(time, maxCount), cb)
+		return this._send(new OffsetsRequest(time, maxCount), cb)
 	}
 
 	return Client

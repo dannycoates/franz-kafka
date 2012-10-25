@@ -37,7 +37,7 @@ module.exports = function (
 			this.partition
 		)
 		header.serialize(stream)
-		return stream.write(payload)
+		cb(stream.write(payload))
 	}
 
 	FetchRequest.prototype.response = function (cb) {

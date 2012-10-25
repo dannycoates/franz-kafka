@@ -44,7 +44,21 @@ module.exports = function (
 					self.connect()
 				}
 			)
+			this.client.on(
+				'ready',
+				function () {
+					self.emit('ready')
+				}
+			)
 		}
+	}
+
+	Broker.prototype.ready = function () {
+		return this.client.ready
+	}
+
+	Broker.prototype.hasTopic = function (name) {
+		return !!this.topicPartitions[name]
 	}
 
 	Broker.prototype.setTopicPartitions = function (name, count) {
@@ -65,7 +79,7 @@ module.exports = function (
 		if (tp) {
 			partition = tp.next()
 		}
-		this.client.produce(topic, messages, partition)
+		return this.client.produce(topic, messages, partition)
 	}
 
 	return Broker

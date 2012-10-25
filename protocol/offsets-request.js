@@ -26,7 +26,7 @@ module.exports = function (
 	//              // -1 = LATEST
 	//              // -2 = EARLIEST
 	// MAX_NUMBER = int32 // Return up to this many offsets
-	OffsetsRequest.prototype.serialize =function (stream) {
+	OffsetsRequest.prototype.serialize =function (stream, cb) {
 		var payload = new Buffer(12)
 		int53.writeInt64BE(this.time, payload)
 		payload.writeUInt32BE(this.maxCount, 8)
@@ -35,7 +35,7 @@ module.exports = function (
 			RequestHeader.types.OFFSETS,
 			"test")
 		header.serialize(stream)
-		return stream.write(payload)
+		cb(stream.write(payload))
 	}
 
 	OffsetsRequest.prototype.response = function (cb) {
