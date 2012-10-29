@@ -195,8 +195,8 @@ module.exports = function (
 
 	}
 
-	ZKConnector.prototype.produce = function (topic, messages) {
-		return this.brokerPool.produce(topic, messages)
+	ZKConnector.prototype.publish = function (topic, messages) {
+		return this.brokerPool.publish(topic, messages)
 	}
 
 	return ZKConnector

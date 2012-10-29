@@ -121,19 +121,19 @@ module.exports = function (
 
 	}
 
-	BrokerPool.prototype.produce = function (topic, messages) {
+	BrokerPool.prototype.publish = function (topic, messages) {
 		var broker = this.brokerForTopic(topic.name)
 		if (broker) {
-			var ready = broker.produce(topic, messages) ||
+			var ready = broker.publish(topic, messages) ||
 				this.topicBrokers[topic.name].someReady()
 			topic.setReady(ready)
 			return ready
 		}
 		// new topic
 		// XXX im not sure how to best handle this case.
-		// for instance if you blast a bunch of produces
+		// for instance if you blast a bunch of publishes
 		// before the broker-partition assignments arrive
-		this.randomReady().produce(topic, messages)
+		this.randomReady().publish(topic, messages)
 		return true
 	}
 

@@ -73,13 +73,13 @@ module.exports = function (
 
 	}
 
-	Broker.prototype.produce = function (topic, messages) {
+	Broker.prototype.publish = function (topic, messages) {
 		var partition = 0
 		var tp = this.topicPartitions[topic.name]
 		if (tp) {
 			partition = tp.next()
 		}
-		return this.client.produce(topic, messages, partition)
+		return this.client.publish(topic, messages, partition)
 	}
 
 	return Broker

@@ -60,7 +60,7 @@ module.exports = function (
 		)
 	}
 
-	Client.prototype.produce = function (topic, messages, partition) {
+	Client.prototype.publish = function (topic, messages, partition) {
 		console.assert(messages)
 
 		if (!Array.isArray(messages)) {

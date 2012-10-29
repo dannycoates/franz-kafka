@@ -41,11 +41,11 @@ module.exports = function (
 		this.connector.on(
 			'brokerReady',
 			function (b) {
-				var topics = Object.keys(this.topics)
+				var topics = Object.keys(self.topics)
 				for (var i = 0; i < topics.length; i++) {
 					var name = topics[i]
 					if (b.hasTopic(name)) {
-						this.topics[name].setReady(true)
+						self.topics[name].setReady(true)
 					}
 				}
 			}
@@ -76,7 +76,7 @@ module.exports = function (
 	}
 
 	Kafka.prototype.publish = function (topic, messages) {
-		this.connector.produce(topic, messages)
+		this.connector.publish(topic, messages)
 	}
 
 	return Kafka
