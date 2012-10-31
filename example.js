@@ -1,7 +1,10 @@
 var Kafka = require('./index')
 
 var kafka = new Kafka({
-	zookeeper: 'localhost:2181'
+	zookeeper: 'localhost:2181',
+	compression: 'gzip',
+	queueTime: 2000,
+	batchSize: 200
 })
 
 kafka.connect(function () {
@@ -22,7 +25,7 @@ kafka.connect(function () {
 			foo.publish("the time is: " + Date.now())
 			bar.publish("a random number is: " + Math.random())
 		},
-		500
+		5
 	)
 
 	}

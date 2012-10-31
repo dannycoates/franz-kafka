@@ -60,17 +60,16 @@ module.exports = function (
 		)
 	}
 
+	// topic: a Topic object
+	// messages: array of: string, Buffer, Message
+	// partition: number
 	Client.prototype.publish = function (topic, messages, partition) {
-		console.assert(messages)
-
-		if (!Array.isArray(messages)) {
-			messages = [messages]
-		}
 		return this._send(
 			new ProduceRequest(
 				topic.name,
 				messages.map(Message.create),
-				partition
+				partition,
+				topic.compression
 			)
 		)
 	}

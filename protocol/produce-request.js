@@ -3,10 +3,11 @@ module.exports = function (
 	Message,
 	State) {
 
-	function ProduceRequest(topic, messages, partition) {
+	function ProduceRequest(topic, messages, partition, compression) {
 		this.topic = topic || ""
-		this.partition = partition
 		this.messages = messages || []
+		this.partition = partition
+		this.compression = compression
 	}
 
 	function messageToBuffer(m) { return m.toBuffer() }
@@ -19,7 +20,7 @@ module.exports = function (
 		var wrapper = new Message()
 		wrapper.setData(
 			Buffer.concat(messageBuffers, messagesLength),
-			Message.compression.GZIP,
+			this.compression,
 			function (err) {
 				cb(err, wrapper.toBuffer())
 			}

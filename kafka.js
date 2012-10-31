@@ -3,15 +3,42 @@ module.exports = function (
 	EventEmitter,
 	Topic,
 	ZKConnector,
-	BrokerPool) {
+	BrokerPool,
+	Message) {
 
+	/*
+	 * options: {
+	 *   zookeeper: 'address:port'
+	 *   brokers:   [{name: host: port: },...]
+	 *   compression: 'none', 'gzip', 'snappy'
+	 *   maxMessageSize: -1
+	 *   queueTime: 5000
+	 *   batchSize: 200
+	 * }
+	 */
 	function Kafka(options) {
 		this.topics = {}
 		this.options = options || {}
 		this.connector = null
-
+		this.queueTime = options.queueTime || 5000
+		this.batchSize = options.batchSize || 200
+		this.setCompression(options.compression)
 	}
 	inherits(Kafka, EventEmitter)
+
+	Kafka.prototype.setCompression = function(string) {
+		switch (string && string.toLowerCase()) {
+			case 'gzip':
+				this.compression = Message.compression.GZIP
+				break;
+			case 'snappy':
+				this.compression = Message.compression.SNAPPY
+				break;
+			default:
+				this.compression = Message.compression.NONE
+				break;
+		}
+	}
 
 	Kafka.prototype.connect = function (onconnect) {
 		var self = this
@@ -60,7 +87,14 @@ module.exports = function (
 	}
 
 	Kafka.prototype.topic = function (name) {
-		var topic = this.topics[name] || new Topic(name, this.connector)
+		var topic = this.topics[name] ||
+			new Topic(
+				name,
+				this.connector,
+				this.compression,
+				this.batchSize,
+				this.queueTime
+			)
 		this.topics[name] = topic
 		return topic
 	}
@@ -75,8 +109,8 @@ module.exports = function (
 		return topic
 	}
 
-	Kafka.prototype.publish = function (topic, messages) {
-		this.connector.publish(topic, messages)
+	Kafka.prototype.publish = function (name, messages) {
+		this.topic(name).publish(messages)
 	}
 
 	return Kafka

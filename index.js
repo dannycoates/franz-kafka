@@ -6,7 +6,8 @@ var EventEmitter = require('events').EventEmitter
 var protocol = require('./protocol')
 var ReadableStream = require('readable-stream')
 var ZooKeeper = require('zookeeper')
-var Topic = require('./topic')(inherits, EventEmitter)
+var MessageBuffer = require('./message-buffer')()
+var Topic = require('./topic')(inherits, EventEmitter, MessageBuffer)
 var Client = require('./client')(
 	net,
 	inherits,
@@ -22,6 +23,6 @@ var Broker = require('./broker')(inherits, EventEmitter, Client)
 var BrokerPool = require('./broker-pool.js')(inherits, EventEmitter)
 var ZKConnector = require('./zkconnector')(os, async, inherits, EventEmitter, ZooKeeper, BrokerPool, Broker)
 
-var kafka = require('./kafka')(inherits, EventEmitter, Topic, ZKConnector, BrokerPool)
+var kafka = require('./kafka')(inherits, EventEmitter, Topic, ZKConnector, BrokerPool, protocol.Message)
 
 module.exports = kafka

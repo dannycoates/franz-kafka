@@ -1,14 +1,17 @@
 module.exports = function (
 	inherits,
-	EventEmitter) {
+	EventEmitter,
+	MessageBuffer) {
 
-	function Topic(name, connector) {
+	function Topic(name, connector, compression, batchSize, queueTime) {
 		this.offset = 0
 		this.name = name || ''
 		this.partitions = []
 		this.connector = connector
 		this.interval = null
 		this.ready = true
+		this.compression = 0
+		this.messages = new MessageBuffer(this, batchSize, queueTime, connector)
 	}
 	inherits(Topic, EventEmitter)
 
@@ -40,7 +43,15 @@ module.exports = function (
 	}
 
 	Topic.prototype.publish = function (messages) {
-		return this.connector.publish(this, messages)
+		var self = this
+		if (!Array.isArray(messages)) {
+			messages = [messages]
+		}
+		return messages.every(
+			function (m) {
+				return self.messages.push(m)
+			}
+		)
 	}
 
 	Topic.prototype.consume = function (interval) { //TODO: starting offset?
