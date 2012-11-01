@@ -82,8 +82,8 @@ module.exports = function (
 		}
 	}
 
-	Kafka.prototype.connectConsumer = function (cb) {
-		this.connector.connectConsumer(cb)
+	Kafka.prototype.registerConsumer = function (topic, cb) {
+		this.connector.registerConsumer(topic, cb)
 	}
 
 	Kafka.prototype.topic = function (name) {

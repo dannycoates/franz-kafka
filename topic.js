@@ -56,7 +56,8 @@ module.exports = function (
 
 	Topic.prototype.consume = function (interval) { //TODO: starting offset?
 		var self = this
-		this.connector.connectConsumer(
+		this.connector.registerConsumer(
+			self,
 			function () {
 				clearInterval(self.interval)
 				self.interval = setInterval(

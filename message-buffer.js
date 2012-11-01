@@ -1,13 +1,8 @@
 module.exports = function () {
 
 	function send() {
-		var sent = false
-		if (this.messages.length > 0) {
-			sent = this.connector.publish(this.topic, this.messages)
-			this.messages = []
-		}
-		clearTimeout(this.timer)
-		this.timer = null
+		var sent = this.connector.publish(this.topic, this.messages)
+		this.reset()
 		return sent
 	}
 
@@ -20,6 +15,12 @@ module.exports = function () {
 		this.messages = []
 		this.timer = null
 		this.send = send.bind(this)
+	}
+
+	MessageBuffer.prototype.reset = function () {
+		this.messages = []
+		clearTimeout(this.timer)
+		this.timer = null
 	}
 
 	MessageBuffer.prototype.push = function(message) {

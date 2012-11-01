@@ -117,7 +117,7 @@ module.exports = function (
 		return (this.topicBrokers[name] || nullTopicBrokers).nextReady()
 	}
 
-	BrokerPool.prototype.fetch = function () {
+	BrokerPool.prototype.fetch = function (topic) {
 
 	}
 

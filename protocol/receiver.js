@@ -1,4 +1,6 @@
 module.exports = function (
+	inherits,
+	EventEmitter,
 	State) {
 
 	function Receiver(stream) {
@@ -18,8 +20,26 @@ module.exports = function (
 		this.current = State.nullState
 		this.closed = false
 	}
+	inherits(Receiver, EventEmitter)
+
+	Receiver.prototype.isEmpty = function () {
+		return this.queue.length === 0
+	}
+
+	Receiver.prototype.close = function (cb) {
+		this.closed = true
+		if (this.isEmpty()) {
+			cb()
+		}
+		else {
+			this.once('empty', cb)
+		}
+	}
 
 	Receiver.prototype.next = function () {
+		if (this.isEmpty() && this.current !== State.nullState) {
+			this.emit('empty')
+		}
 		this.current = this.queue.shift() || State.nullState
 	}
 
