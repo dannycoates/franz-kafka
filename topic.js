@@ -54,8 +54,8 @@ module.exports = function (
 		)
 	}
 
-	Topic.prototype.consume = function (interval) { //TODO: starting offset?
-		this.connector.consume(this, interval)
+	Topic.prototype.consume = function (interval, partitions) { //TODO: starting offset?
+		this.connector.consume(this, interval, partitions)
 	}
 
 	return Topic

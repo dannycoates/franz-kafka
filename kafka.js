@@ -85,9 +85,9 @@ module.exports = function (
 		return topic
 	}
 
-	Kafka.prototype.consume = function (name, interval) {
+	Kafka.prototype.consume = function (name, interval, partitions) {
 		var topic = this.topic(name)
-		topic.consume(interval || 1000)
+		topic.consume(interval || 1000, partitions)
 		return topic
 	}
 

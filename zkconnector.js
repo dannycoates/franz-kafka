@@ -94,12 +94,15 @@ module.exports = function (
 
 	ZKConnector.prototype.consume = function (topic, interval) {
 		var self = this
-		//this.consumer.consume(topic)
-		this.zk.registerConsumers(this.groupId, this.consumerId, this.consumer, noop)
-	}
-
-	ZKConnector.prototype.fetch = function (topic) {
-
+		//TODO: need to be able to consume an array of topics
+		if (!this.consumerRegistered) {
+			this.zk.registerConsumers(
+				this.consumer,
+				function (partitions) {
+					self.consumer.consume(topic, interval, partitions)
+				}
+			)
+		}
 	}
 
 	ZKConnector.prototype.publish = function (topic, messages) {

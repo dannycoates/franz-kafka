@@ -19,10 +19,11 @@ var Client = require('./client')(
 	protocol.ProduceRequest,
 	protocol.OffsetsRequest
 )
+var Owner = require('./owner')()
 var Broker = require('./broker')(inherits, EventEmitter, Client)
 var BrokerPool = require('./broker-pool')(inherits, EventEmitter)
 var Producer = require('./producer')(inherits, EventEmitter, BrokerPool)
-var Consumer = require('./consumer')(os, inherits, EventEmitter)
+var Consumer = require('./consumer')(os, inherits, EventEmitter, Owner)
 var ZK = require('./zk')(async, inherits, EventEmitter, ZooKeeper)
 var ZKConnector = require('./zkconnector')(async, inherits, EventEmitter, ZK, Producer, Consumer, BrokerPool, Broker)
 var StaticConnector = require('./static-connector')(inherits, EventEmitter, Producer, Consumer, BrokerPool, Broker)

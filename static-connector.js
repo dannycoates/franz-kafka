@@ -18,11 +18,6 @@ module.exports = function (
 	//         bar: 2
 	//       }
 	//     }
-	//   ],
-	//   consumers: [
-	//     {
-	//
-	//     }
 	//   ]
 	// }
 	function StaticConnector(options) {
@@ -58,30 +53,17 @@ module.exports = function (
 				)
 			}
 		)
-		this.options.consumers.forEach(
-			function (c) {
-
-			}
-		)
 		EventEmitter.call(this)
 	}
 	inherits(StaticConnector, EventEmitter)
 
-	StaticConnector.prototype.consume = function (topic, interval) {
-		this.consumer.consume(
-			topic,
-			function () {
-
-			}
-		)
+	StaticConnector.prototype.consume = function (topic, interval, options) {
+		console.assert(options)
+		this.consumer.consume(topic, options)
 	}
 
 	StaticConnector.prototype.publish = function (topic, messages) {
 		return this.producer.publish(topic, messages)
-	}
-
-	StaticConnector.prototype.fetch = function (topic) {
-		return this.consumer.fetch(topic)
 	}
 
 	return StaticConnector

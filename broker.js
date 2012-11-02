@@ -70,8 +70,8 @@ module.exports = function (
 		this.topicPartitions = {}
 	}
 
-	Broker.prototype.fetch = function () {
-
+	Broker.prototype.fetch = function (topic, partition, maxSize) {
+		this.client.fetch(topic, partition, maxSize)
 	}
 
 	Broker.prototype.publish = function (topic, messages) {
