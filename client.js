@@ -54,10 +54,16 @@ module.exports = function (
 		return this.ready
 	}
 
-	Client.prototype.fetch = function (topic, partition, maxSize) {
+	// cb: function (err, length, messages) {}
+	Client.prototype.fetch = function (topic, partition, maxSize, cb) {
 		return this._send(
-			new FetchRequest(topic.name, topic.offset, partition, maxSize),
-			topic.parseMessages.bind(topic)
+			new FetchRequest(
+				topic.name,
+				topic.offset,
+				partition,
+				maxSize
+			),
+			cb
 		)
 	}
 

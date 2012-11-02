@@ -37,6 +37,8 @@ module.exports = function (
 		this.brokerReady = function () {
 			self.emit('brokerReady', this)
 		}
+		this.pendingConsumers = []
+		this.registerConsumers = registerConsumers.bind(this)
 		this.consumer = new Consumer(options.groupId, this.allBrokers)
 		this.connect()
 		EventEmitter.call(this)
@@ -92,17 +94,26 @@ module.exports = function (
 
 	}
 
-	ZKConnector.prototype.consume = function (topic, interval) {
-		var self = this
-		//TODO: need to be able to consume an array of topics
-		if (!this.consumerRegistered) {
+	function registerConsumers() {
+		if (this.pendingConsumers.length > 0) {
+			var self = this
+			this.consumer.foo(this.pendingConsumers) //TODO name me
 			this.zk.registerConsumers(
 				this.consumer,
-				function (partitions) {
-					self.consumer.consume(topic, interval, partitions)
+				function (topicPartitions) {
+					for(var i = 0; i < topicPartitions.length; i++) {
+						var tp = topicPartitions[i]
+						self.consumer.consume(tp.topic, tp.interval, tp.partitions)
+					}
 				}
 			)
+			this.pendingConsumers = []
 		}
+	}
+
+	ZKConnector.prototype.consume = function (topic, interval) {
+		this.pendingConsumers.push({topic: topic, interval: interval})
+		process.nextTick(this.registerConsumers)
 	}
 
 	ZKConnector.prototype.publish = function (topic, messages) {

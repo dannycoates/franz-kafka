@@ -4,23 +4,17 @@ module.exports = function (
 	MessageBuffer) {
 
 	function Topic(name, connector, compression, batchSize, queueTime) {
-		this.offset = 0
 		this.name = name || ''
-		this.partitions = []
 		this.connector = connector
 		this.ready = true
-		this.compression = 0
+		this.compression = compression
 		this.messages = new MessageBuffer(this, batchSize, queueTime, connector)
 		EventEmitter.call(this)
 	}
 	inherits(Topic, EventEmitter)
 
-	Topic.prototype.parseMessages = function(err, length, messages) {
-		if (err) {
-			return this.emit('error', err)
-		}
+	Topic.prototype.parseMessages = function(messages) {
 		var self = this
-		this.offset += length
 		for (var i = 0; i < messages.length; i++) {
 			//XXX do we need to preserve the order?
 			messages[i].unpack(

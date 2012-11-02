@@ -22,6 +22,7 @@ module.exports = function (
 	// }
 	function StaticConnector(options) {
 		var self = this
+		this.options = options
 		this.allBrokers = new BrokerPool()
 		this.producer = new Producer(this.allBrokers)
 		this.consumer = new Consumer(options.groupId, this.allBrokers)
@@ -35,7 +36,7 @@ module.exports = function (
 		this.options.brokers.forEach(
 			function (b) {
 				var broker = new Broker(b.id, b.host, b.port)
-				Object.keys(b.topics).forEach(
+				Object.keys(b.topics).forEach( //TODO would be great to get rid of this
 					function (t) {
 						broker.setTopicPartitions(t, b.topics[t])
 					}
@@ -57,9 +58,13 @@ module.exports = function (
 	}
 	inherits(StaticConnector, EventEmitter)
 
-	StaticConnector.prototype.consume = function (topic, interval, options) {
-		console.assert(options)
-		this.consumer.consume(topic, options)
+	StaticConnector.prototype.consume = function (topic, interval, partitions) {
+		console.assert(partitions)
+		this.consumer.consume(topic, interval, partitions)
+	}
+
+	StaticConnector.prototype.stopConsuming = function (topic, partitions) {
+		this.consumer.stop(topic, partitions)
 	}
 
 	StaticConnector.prototype.publish = function (topic, messages) {

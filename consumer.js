@@ -17,11 +17,25 @@ module.exports = function (
 
 	Consumer.prototype.consume = function (topic, interval, partitions) {
 		console.assert(Array.isArray(partitions))
-		var owner = this.owners[topic.name] || new Owner(this.allBrokers)
-		owner.addPartitions(partitions)
-		owner.interval = interval
-		this.owners[topic.name] = owner
-		owner.consume()
+		var name = topic.name
+		var owner = this.owners[name] || new Owner(topic, this.allBrokers)
+		this.owners[name] = owner
+		owner.consume(partitions, interval)
+	}
+
+	Consumer.prototype.stop = function (topic, partitions) {
+		if (!topic) { // stop all
+			var topics = Object.keys(this.owners)
+			for (var i = 0; i < topics.length; i++) {
+				this.stop(topics[i])
+			}
+		}
+		var name = topic.name
+		var owner = this.owners[name]
+		owner.stop(partitions)
+		if (!owner.hasPartitions()) {
+			delete this.owners[name]
+		}
 	}
 
 	return Consumer
