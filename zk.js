@@ -6,7 +6,7 @@ module.exports = function (
 
 	function noop() {}
 
-	function ZK(connect) {
+	function ZK(options) {
 		this.zk = new ZooKeeper({
 			connect: options.zookeeper,
 			timeout: 200000,
@@ -18,6 +18,7 @@ module.exports = function (
 			function () { console.log('zk close')}
 		)
 		this.consumer = {}
+		EventEmitter.call(this)
 	}
 	inherits(ZK, EventEmitter)
 
@@ -53,7 +54,8 @@ module.exports = function (
 			'/brokers/ids/' + id,
 			false,
 			function (rc, err, stat, data) {
-				done(id, data || '')
+				var str = data ? data.toString() : ''
+				done(id, str)
 			}
 		)
 	}

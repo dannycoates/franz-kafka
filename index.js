@@ -20,9 +20,12 @@ var Client = require('./client')(
 	protocol.OffsetsRequest
 )
 var Broker = require('./broker')(inherits, EventEmitter, Client)
-var BrokerPool = require('./broker-pool.js')(inherits, EventEmitter)
-var ZKConnector = require('./zkconnector')(os, async, inherits, EventEmitter, ZooKeeper, BrokerPool, Broker)
-
-var kafka = require('./kafka')(inherits, EventEmitter, Topic, ZKConnector, BrokerPool, protocol.Message)
+var BrokerPool = require('./broker-pool')(inherits, EventEmitter)
+var Producer = require('./producer')(inherits, EventEmitter, BrokerPool)
+var Consumer = require('./consumer')(os, inherits, EventEmitter)
+var ZK = require('./zk')(async, inherits, EventEmitter, ZooKeeper)
+var ZKConnector = require('./zkconnector')(async, inherits, EventEmitter, ZK, Producer, Consumer, BrokerPool, Broker)
+var StaticConnector = require('./static-connector')(inherits, EventEmitter, Producer, Consumer, BrokerPool, Broker)
+var kafka = require('./kafka')(inherits, EventEmitter, Topic, ZKConnector, StaticConnector, protocol.Message)
 
 module.exports = kafka

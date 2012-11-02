@@ -19,6 +19,7 @@ module.exports = function (
 		this.queue = []
 		this.current = State.nullState
 		this.closed = false
+		EventEmitter.call(this)
 	}
 	inherits(Receiver, EventEmitter)
 

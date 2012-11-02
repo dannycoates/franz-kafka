@@ -8,10 +8,10 @@ module.exports = function (
 		this.name = name || ''
 		this.partitions = []
 		this.connector = connector
-		this.interval = null
 		this.ready = true
 		this.compression = 0
 		this.messages = new MessageBuffer(this, batchSize, queueTime, connector)
+		EventEmitter.call(this)
 	}
 	inherits(Topic, EventEmitter)
 
@@ -55,19 +55,7 @@ module.exports = function (
 	}
 
 	Topic.prototype.consume = function (interval) { //TODO: starting offset?
-		var self = this
-		this.connector.registerConsumer(
-			self,
-			function () {
-				clearInterval(self.interval)
-				self.interval = setInterval(
-					function () {
-						self.connector.fetch(self)
-					},
-					interval
-				)
-			}
-		)
+		this.connector.consume(this, interval)
 	}
 
 	return Topic

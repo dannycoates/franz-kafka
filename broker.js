@@ -21,6 +21,7 @@ module.exports = function (
 		this.topicPartitions = {}
 		this.client = null
 		this.connect()
+		EventEmitter.call(this)
 	}
 	inherits(Broker, EventEmitter)
 

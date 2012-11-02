@@ -3,7 +3,7 @@ module.exports = function (
 	EventEmitter,
 	Topic,
 	ZKConnector,
-	BrokerPool,
+	StaticConnector,
 	Message) {
 
 	/*
@@ -23,6 +23,7 @@ module.exports = function (
 		this.queueTime = options.queueTime || 5000
 		this.batchSize = options.batchSize || 200
 		this.setCompression(options.compression)
+		EventEmitter.call(this)
 	}
 	inherits(Kafka, EventEmitter)
 
@@ -46,21 +47,10 @@ module.exports = function (
 			this.connector = new ZKConnector(this.options)
 		}
 		else if (this.options.brokers) {
-			this.connector = new BrokerPool()
-			this.options.brokers.forEach(
-				function (b) {
-					var broker = new Broker(b.name, b.host, b.port)
-					broker.once(
-						'connect',
-						function () {
-							self.connector.add(broker)
-						}
-					)
-				}
-			)
+			this.connector = new StaticConnector(this.options)
 		}
 		this.connector.once(
-			'brokerAdded',
+			'brokerAdded', // TODO: create a more definitive event in the connectors
 			function () {
 				self.emit('connect')
 			}
@@ -82,10 +72,6 @@ module.exports = function (
 		}
 	}
 
-	Kafka.prototype.registerConsumer = function (topic, cb) {
-		this.connector.registerConsumer(topic, cb)
-	}
-
 	Kafka.prototype.topic = function (name) {
 		var topic = this.topics[name] ||
 			new Topic(
@@ -97,10 +83,6 @@ module.exports = function (
 			)
 		this.topics[name] = topic
 		return topic
-	}
-
-	Kafka.prototype.fetch = function (topic) {
-		this.connector.fetch(topic)
 	}
 
 	Kafka.prototype.consume = function (name, interval) {
