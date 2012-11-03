@@ -1,4 +1,5 @@
 module.exports = function (
+	async,
 	os,
 	inherits,
 	EventEmitter,
@@ -30,12 +31,30 @@ module.exports = function (
 				this.stop(topics[i])
 			}
 		}
-		var name = topic.name
-		var owner = this.owners[name]
-		owner.stop(partitions)
-		if (!owner.hasPartitions()) {
-			delete this.owners[name]
+		else {
+			var name = topic.name
+			var owner = this.owners[name]
+			owner.stop(partitions)
+			if (!owner.hasPartitions()) {
+				delete this.owners[name]
+			}
 		}
+	}
+
+	Consumer.prototype.drain = function (cb) {
+		var self = this
+		var owners = Object.keys(this.owners).map(
+			function (name) {
+				return self.owners[name]
+			}
+		)
+		async.forEach(
+			owners,
+			function (owner, next) {
+				owner.drain(next)
+			},
+			cb
+		)
 	}
 
 	return Consumer

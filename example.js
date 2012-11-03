@@ -7,8 +7,8 @@ var kafka = new Kafka({
 		host: 'localhost',
 		port: 9092,
 		topics: {
-			foo: 2,
-			bar: 2
+			//foo: 2,
+			bar: 1
 		}
 	}],
 	compression: 'gzip',
@@ -19,7 +19,7 @@ var kafka = new Kafka({
 kafka.connect(function () {
 
 	//var foo = kafka.topic('foo')
-	var bar = kafka.consume('bar', 200, ['0-0', '0-1'])
+	var bar = kafka.consume('bar', 200, ['0-0'])
 
 	bar.on(
 		'message',

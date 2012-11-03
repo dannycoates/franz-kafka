@@ -4,7 +4,7 @@ module.exports = function (
 	Topic,
 	ZKConnector,
 	StaticConnector,
-	Message) {
+	Compression) {
 
 	/*
 	 * options: {
@@ -30,13 +30,13 @@ module.exports = function (
 	Kafka.prototype.setCompression = function(string) {
 		switch (string && string.toLowerCase()) {
 			case 'gzip':
-				this.compression = Message.compression.GZIP
+				this.compression = Compression.GZIP
 				break;
 			case 'snappy':
-				this.compression = Message.compression.SNAPPY
+				this.compression = Compression.SNAPPY
 				break;
 			default:
-				this.compression = Message.compression.NONE
+				this.compression = Compression.NONE
 				break;
 		}
 	}

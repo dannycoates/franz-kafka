@@ -1,6 +1,8 @@
+var net = require('net')
 var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
 var zlib = require('zlib')
+var ReadableStream = require('readable-stream')
 var snappy = require('snappy')
 var int53 = require('int53')
 var crc32 = require('buffer-crc32')
@@ -15,11 +17,16 @@ var Receiver = require('./receiver')(inherits, EventEmitter, State)
 var FetchRequest = require('./fetch-request')(RequestHeader, Response, FetchBody, int53)
 var OffsetsRequest = require('./offsets-request')(RequestHeader, Response, OffsetsBody, int53)
 var ProduceRequest = require('./produce-request')(RequestHeader, Message, State)
+var Client = require('./client')(
+	net,
+	inherits,
+	EventEmitter,
+	ReadableStream,
+	Message,
+	Receiver,
+	FetchRequest,
+	ProduceRequest,
+	OffsetsRequest
+)
 
-module.exports = {
-	Receiver: Receiver,
-	FetchRequest: FetchRequest,
-	ProduceRequest: ProduceRequest,
-	OffsetsRequest: OffsetsRequest,
-	Message: Message
-}
+module.exports = Client

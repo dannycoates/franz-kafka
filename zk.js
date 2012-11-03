@@ -17,7 +17,6 @@ module.exports = function (
 			'close',
 			function () { console.log('zk close')}
 		)
-		this.consumer = {}
 		EventEmitter.call(this)
 	}
 	inherits(ZK, EventEmitter)
@@ -118,17 +117,99 @@ module.exports = function (
 		)
 	}
 
-	ZK.prototype.registerConsumer = function (topic, cb) {
-		var self = this
-		this.consumer[topic.name] = 1
-		this.zk.a_create(
-			'/consumers/' + this.groupId + '/ids/' + this.consumerId,
-			JSON.stringify(this.consumer),
-			ZooKeeper.ZOO_EPHEMERAL,
-			function (rc, err, path) {
-
+	ZK.prototype._create = function (path, data, options, cb) {
+		this.zk.a_create(path, data, options,
+			function (rc, err, stat) {
+				switch (rc) {
+					case ZooKeeper.ZOK:
+						cb(null, stat)
+						break;
+					case ZooKeeper.ZNODEEXISTS:
+						cb(null, path)
+						break;
+					default:
+						cb(new Error(rc))
+						break;
+				}
 			}
 		)
+	}
+
+	ZK.prototype._createOrReplace = function (path, data, options, cb) {
+		var self = this
+		async.waterfall([
+			function (next) {
+				self.zk.a_exists(path, false,
+					function (rc, err, stat) {
+						next(err, stat)
+					}
+				)
+			},
+			function (stat, next) {
+				if (stat) {
+					self.zk.a_set(path, data, stat.version,
+						function (rc, err, stat) {
+							next(err, stat)
+						}
+					)
+				}
+				else {
+					self.zk.a_create(path, data, options,
+						function (rc, err, stat) {
+							next(err, stat)
+						}
+					)
+				}
+			}
+			],
+			function (err, result) {
+				cb(err)
+			}
+		)
+	}
+
+	ZK.prototype._createConsumerRoots = function (groupId, cb) {
+		var self = this
+		var base = '/consumers/' + groupId
+		var roots = [base + '/ids', base + '/owners', base + '/offsets']
+		async.forEachSeries(
+			roots,
+			function (root, next) {
+				self.zk.mkdirp(root, next)
+			},
+			function (err) {
+				if (err) {
+					console.log(err)
+				}
+				cb(err)
+			}
+		)
+	}
+
+	ZK.prototype.registerTopics = function (topics, consumer, cb) {
+		var self = this
+		async.series([
+			function (next) {
+				self._createConsumerRoots(consumer.groupId, next)
+			},
+			function (next) {
+				self._createOrReplace(
+					'/consumers/' + consumer.groupId + '/ids/' + consumer.consumerId,
+					JSON.stringify(topics),
+					ZooKeeper.ZOO_EPHEMERAL,
+					next
+				)
+			}
+			],
+			function (err) {
+				cb(err)
+			}
+		)
+	}
+
+	ZK.prototype.getTopicPartitions = function (topics, consumer, cb) {
+		//TODO
+		cb([{topic: 'bar', interval: 200, partitions: ['0-0']}])
 	}
 
 	return ZK

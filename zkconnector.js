@@ -37,8 +37,9 @@ module.exports = function (
 		this.brokerReady = function () {
 			self.emit('brokerReady', this)
 		}
-		this.pendingConsumers = []
-		this.registerConsumers = registerConsumers.bind(this)
+		this.hasPendingTopics = false
+		this.interestedTopics = {}
+		this.registerTopics = registerTopics.bind(this)
 		this.consumer = new Consumer(options.groupId, this.allBrokers)
 		this.connect()
 		EventEmitter.call(this)
@@ -91,29 +92,43 @@ module.exports = function (
 	}
 
 	ZKConnector.prototype._rebalance = function () {
-
+		var self = this
+		async.waterfall([
+			function (next) {
+				self.consumer.drain(next)
+			},
+			function (next) {
+				self.consumer.stop()
+				self.zk.getTopicPartitions(self.interestedTopics, self.consumer, next)
+			},
+			function (topicPartitions) {
+				for(var i = 0; i < topicPartitions.length; i++) {
+					var tp = topicPartitions[i]
+					self.consumer.consume(tp.topic, tp.interval, tp.partitions)
+				}
+			}
+			]
+		)
 	}
 
-	function registerConsumers() {
-		if (this.pendingConsumers.length > 0) {
+	function registerTopics() {
+		if (this.hasPendingTopics) {
 			var self = this
-			this.consumer.foo(this.pendingConsumers) //TODO name me
-			this.zk.registerConsumers(
+			this.zk.registerTopics(
+				this.interestedTopics,
 				this.consumer,
-				function (topicPartitions) {
-					for(var i = 0; i < topicPartitions.length; i++) {
-						var tp = topicPartitions[i]
-						self.consumer.consume(tp.topic, tp.interval, tp.partitions)
-					}
+				function () {
+					self._rebalance()
 				}
 			)
-			this.pendingConsumers = []
+			this.hasPendingTopics = false
 		}
 	}
 
 	ZKConnector.prototype.consume = function (topic, interval) {
-		this.pendingConsumers.push({topic: topic, interval: interval})
-		process.nextTick(this.registerConsumers)
+		this.hasPendingTopics = true
+		this.interestedTopics[topic.name] = 1 //TODO propagate interval
+		process.nextTick(this.registerTopics)
 	}
 
 	ZKConnector.prototype.publish = function (topic, messages) {

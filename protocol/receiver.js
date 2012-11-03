@@ -37,6 +37,10 @@ module.exports = function (
 		}
 	}
 
+	Receiver.prototype.open = function () {
+		this.closed = false
+	}
+
 	Receiver.prototype.next = function () {
 		if (this.isEmpty() && this.current !== State.nullState) {
 			this.emit('empty')

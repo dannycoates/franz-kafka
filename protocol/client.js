@@ -40,6 +40,17 @@ module.exports = function (
 	}
 	inherits(Client, EventEmitter)
 
+	Client.prototype.drain = function (cb) {
+		var self = this
+		this.receiver.close(
+			function () {
+				// XXX is reopening correct here?
+				self.receiver.open()
+				cb()
+			}
+		)
+	}
+
 	Client.prototype._send = function (request, cb) {
 		var self = this
 		request.serialize(
@@ -85,6 +96,8 @@ module.exports = function (
 	Client.prototype.offsets = function (time, maxCount, cb) {
 		return this._send(new OffsetsRequest(time, maxCount), cb)
 	}
+
+	Client.compression = Message.compression
 
 	return Client
 }

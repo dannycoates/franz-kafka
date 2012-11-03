@@ -1,52 +1,4 @@
-module.exports = function () {
-
-	function handleResponse(err, length, messages) {
-		if (err) {
-			return this.topic.error(err)
-		}
-		if (length === 0) {
-			//TODO no new messages, backoff
-			return
-		}
-		this.offset += length
-		this.topic.parseMessages(messages)
-		this._loop()
-	}
-
-	function fetch() {
-		this.broker.fetch(this.topic, this.partition, this.maxSize, this.fetchResponder)
-	}
-
-	function Partition(topic, broker, partition) {
-		this.topic = topic
-		this.broker = broker
-		this.partition = partition
-		this.interval = 0
-		this.offset = 0
-		this.maxSize = 300 * 1024 //TODO set via option
-		this.fetcher = fetch.bind(this)
-		this.fetchResponder = handleResponse.bind(this)
-		this.timer = null
-	}
-
-	Partition.prototype._loop = function () {
-		if (this.interval) {
-			this.timer = setTimeout(this.fetcher, this.interval)
-		}
-	}
-
-	Partition.prototype.start = function () {
-		this.fetcher()
-	}
-
-	Partition.prototype.stop = function () {
-		clearTimeout(this.timer)
-	}
-
-	Partition.prototype.reset = function () {
-		this.stop()
-		this.start()
-	}
+module.exports = function (Partition) {
 
 	function Owner(topic, brokers) {
 		this.topic = topic
@@ -60,12 +12,13 @@ module.exports = function () {
 			var split = name.split('-')
 			if (split.length === 2) {
 				var brokerId = +split[0]
-				var partition = +split[1]
+				var partitionNo = +split[1]
 				var broker = this.brokers.get(brokerId)
-				var pc = this.partitions[name] || new Partition(this.topic, broker, partition)
-				pc.interval = interval
-				pc.reset()
-				this.partitions[name] = pc
+				var partition = this.partitions[name] ||
+					new Partition(this.topic, broker, partitionNo)
+				partition.interval = interval
+				partition.reset()
+				this.partitions[name] = partition
 			}
 		}
 	}
@@ -86,6 +39,22 @@ module.exports = function () {
 
 	Owner.prototype.hasPartitions = function () {
 		return Object.keys(this.partitions).length > 0
+	}
+
+	Owner.prototype.drain = function (cb) {
+		var self = this
+		var partitions = Object.keys(this.partitions).map(
+			function (name) {
+				return self.partitions[name]
+			}
+		)
+		async.forEach(
+			partitions,
+			function (partition, next) {
+				partition.drain(next)
+			},
+			cb
+		)
 	}
 
 	return Owner

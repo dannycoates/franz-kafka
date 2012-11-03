@@ -83,5 +83,9 @@ module.exports = function (
 		return this.client.publish(topic, messages, partition)
 	}
 
+	Broker.prototype.drain = function (cb) {
+		this.client.drain(cb)
+	}
+
 	return Broker
 }
