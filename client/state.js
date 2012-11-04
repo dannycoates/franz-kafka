@@ -22,7 +22,6 @@ module.exports = function (inherits) {
 		if (this.complete()) { return true }
 		var data = stream.read(this.remainingBytes)
 		if (!data) { return false }
-		console.assert(data.length <= this.remainingBytes)
 		data.copy(this.buffer, this.buffer.length - this.remainingBytes)
 		this.remainingBytes = this.remainingBytes - data.length
 		return this.complete()

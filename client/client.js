@@ -82,7 +82,6 @@ module.exports = function (
 	// messages: array of: string, Buffer, Message
 	// partition: number
 	Client.prototype.publish = function (topic, messages, partition) {
-		//console.log('publish ' + topic.name + partition)
 		return this._send(
 			new ProduceRequest(
 				topic.name,

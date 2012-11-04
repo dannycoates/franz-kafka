@@ -1,4 +1,5 @@
 module.exports = function (
+	logger,
 	inherits,
 	EventEmitter,
 	Producer,
@@ -58,9 +59,9 @@ module.exports = function (
 	}
 	inherits(StaticConnector, EventEmitter)
 
-	StaticConnector.prototype.consume = function (topic, interval, partitions) {
-		console.assert(partitions)
-		this.consumer.consume(topic, interval, partitions)
+	StaticConnector.prototype.consume = function (topic, partitions) {
+		logger.assert(partitions)
+		this.consumer.consume(topic, partitions)
 	}
 
 	StaticConnector.prototype.stopConsuming = function (topic, partitions) {

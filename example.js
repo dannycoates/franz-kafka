@@ -1,16 +1,16 @@
 var Kafka = require('./index')
 
 var kafka = new Kafka({
-	//zookeeper: 'localhost:2181',
-	brokers: [{
-		id: 0,
-		host: 'localhost',
-		port: 9092,
-		topics: {
-			//foo: 2,
-			bar: 1
-		}
-	}],
+	zookeeper: 'localhost:2181',
+	// brokers: [{
+	// 	id: 0,
+	// 	host: 'localhost',
+	// 	port: 9092,
+	// 	topics: {
+	// 		//foo: 2,
+	// 		bar: 1
+	// 	}
+	// }],
 	compression: 'gzip',
 	queueTime: 2000,
 	batchSize: 200
@@ -24,7 +24,7 @@ kafka.connect(function () {
 	bar.on(
 		'message',
 		function (m) {
-			console.log(m.toString())
+			//console.log(m.toString())
 		}
 	)
 

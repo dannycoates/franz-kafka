@@ -5,6 +5,7 @@ module.exports = function (
 
 	function Topic(name, connector, compression, batchSize, queueTime) {
 		this.name = name || ''
+		this.interval = 0
 		this.connector = connector
 		this.ready = true
 		this.compression = compression
@@ -49,7 +50,8 @@ module.exports = function (
 	}
 
 	Topic.prototype.consume = function (interval, partitions) { //TODO: starting offset?
-		this.connector.consume(this, interval, partitions)
+		this.interval = interval
+		this.connector.consume(this, partitions)
 	}
 
 	return Topic

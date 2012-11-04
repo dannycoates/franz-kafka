@@ -1,4 +1,5 @@
 module.exports = function (
+	logger,
 	async,
 	os,
 	inherits,
@@ -16,12 +17,12 @@ module.exports = function (
 		this.owners = {}
 	}
 
-	Consumer.prototype.consume = function (topic, interval, partitions) {
-		console.assert(Array.isArray(partitions))
+	Consumer.prototype.consume = function (topic, partitions) {
+		logger.assert(Array.isArray(partitions))
 		var name = topic.name
 		var owner = this.owners[name] || new Owner(topic, this.allBrokers)
 		this.owners[name] = owner
-		owner.consume(partitions, interval)
+		owner.consume(partitions)
 	}
 
 	Consumer.prototype.stop = function (topic, partitions) {

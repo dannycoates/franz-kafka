@@ -23,7 +23,6 @@ module.exports = function (
 	// NUMBER_OFFSETS = int32 // How many offsets are being returned
 	// OFFSETS = int64[] // List of offsets
 	OffsetsBody.prototype.parse = function () {
-		console.assert(this.complete())
 		var offsets = []
 		var count = this.buffer.readUInt32BE(0)
 		for (var i = 0; i < count; i++) {

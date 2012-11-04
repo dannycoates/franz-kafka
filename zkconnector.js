@@ -1,4 +1,5 @@
 module.exports = function (
+	logger,
 	async,
 	inherits,
 	EventEmitter,
@@ -23,14 +24,14 @@ module.exports = function (
 		this.allBrokers.on(
 			'brokerAdded',
 			function (b) {
-				console.log('added ' + b.id)
+				logger.log('added ' + b.id)
 				self.emit('brokerAdded', b)
 			}
 		)
 		this.allBrokers.on(
 			'brokerRemoved',
 			function (b) {
-				console.log('removed ' + b.id)
+				logger.log('removed ' + b.id)
 				self.emit('brokerRemoved', b)
 			}
 		)
@@ -93,6 +94,7 @@ module.exports = function (
 
 	ZKConnector.prototype._rebalance = function () {
 		var self = this
+		logger.log('rebalancing')
 		async.waterfall([
 			function (next) {
 				self.consumer.drain(next)
@@ -102,9 +104,10 @@ module.exports = function (
 				self.zk.getTopicPartitions(self.interestedTopics, self.consumer, next)
 			},
 			function (topicPartitions) {
+				logger.log(topicPartitions)
 				for(var i = 0; i < topicPartitions.length; i++) {
 					var tp = topicPartitions[i]
-					self.consumer.consume(tp.topic, tp.interval, tp.partitions)
+					self.consumer.consume(tp.topic, tp.partitions)
 				}
 			}
 			]
@@ -125,9 +128,9 @@ module.exports = function (
 		}
 	}
 
-	ZKConnector.prototype.consume = function (topic, interval) {
+	ZKConnector.prototype.consume = function (topic) {
 		this.hasPendingTopics = true
-		this.interestedTopics[topic.name] = 1 //TODO propagate interval
+		this.interestedTopics[topic.name] = topic
 		process.nextTick(this.registerTopics)
 	}
 

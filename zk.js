@@ -1,4 +1,5 @@
 module.exports = function (
+	logger,
 	async,
 	inherits,
 	EventEmitter,
@@ -15,7 +16,7 @@ module.exports = function (
 		})
 		this.zk.once(
 			'close',
-			function () { console.log('zk close')}
+			function () { logger.log('zk close')}
 		)
 		EventEmitter.call(this)
 	}
@@ -141,6 +142,8 @@ module.exports = function (
 			function (next) {
 				self.zk.a_exists(path, false,
 					function (rc, err, stat) {
+						logger.log('exists ' + path)
+						logger.log(stat)
 						next(err, stat)
 					}
 				)
@@ -149,6 +152,8 @@ module.exports = function (
 				if (stat) {
 					self.zk.a_set(path, data, stat.version,
 						function (rc, err, stat) {
+							logger.log('set ' + path)
+							logger.log(stat)
 							next(err, stat)
 						}
 					)
@@ -156,6 +161,8 @@ module.exports = function (
 				else {
 					self.zk.a_create(path, data, options,
 						function (rc, err, stat) {
+							logger.log('create ' + path)
+							logger.log(stat)
 							next(err, stat)
 						}
 					)
@@ -179,15 +186,26 @@ module.exports = function (
 			},
 			function (err) {
 				if (err) {
-					console.log(err)
+					logger.log(err)
 				}
+				logger.log('created roots')
 				cb(err)
 			}
 		)
 	}
 
+	function toTopicString(topics) {
+		var names = Object.keys(topics)
+		var ts = {}
+		for (var i = 0; i < names.length; i++) {
+			ts[names[i]] = 1
+		}
+		return JSON.stringify(ts)
+	}
+
 	ZK.prototype.registerTopics = function (topics, consumer, cb) {
 		var self = this
+		logger.log('registerTopics')
 		async.series([
 			function (next) {
 				self._createConsumerRoots(consumer.groupId, next)
@@ -195,13 +213,14 @@ module.exports = function (
 			function (next) {
 				self._createOrReplace(
 					'/consumers/' + consumer.groupId + '/ids/' + consumer.consumerId,
-					JSON.stringify(topics),
+					toTopicString(topics),
 					ZooKeeper.ZOO_EPHEMERAL,
 					next
 				)
 			}
 			],
 			function (err) {
+				logger.log('registeredTopics')
 				cb(err)
 			}
 		)
@@ -209,7 +228,7 @@ module.exports = function (
 
 	ZK.prototype.getTopicPartitions = function (topics, consumer, cb) {
 		//TODO
-		cb([{topic: 'bar', interval: 200, partitions: ['0-0']}])
+		cb(null, [{topic: topics['bar'], partitions: ['0-0']}])
 	}
 
 	return ZK

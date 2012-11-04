@@ -6,7 +6,7 @@ module.exports = function (Partition) {
 		this.partitions = {}
 	}
 
-	Owner.prototype.consume = function (partitions, interval) {
+	Owner.prototype.consume = function (partitions) {
 		for (var i = 0; i < partitions.length; i++) {
 			var name = partitions[i]
 			var split = name.split('-')
@@ -16,7 +16,6 @@ module.exports = function (Partition) {
 				var broker = this.brokers.get(brokerId)
 				var partition = this.partitions[name] ||
 					new Partition(this.topic, broker, partitionNo)
-				partition.interval = interval
 				partition.reset()
 				this.partitions[name] = partition
 			}

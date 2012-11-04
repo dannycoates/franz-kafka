@@ -1,4 +1,4 @@
-module.exports = function () {
+module.exports = function (logger) {
 	function handleResponse(err, length, messages) {
 		if (err) {
 			return this.topic.error(err)
@@ -13,6 +13,7 @@ module.exports = function () {
 	}
 
 	function fetch() {
+		logger.log("fetching " + this.topic.name + ':' + this.broker.id + '-' + this.partition)
 		this.broker.fetch(this.topic, this.partition, this.maxSize, this.fetchResponder)
 	}
 
@@ -20,7 +21,7 @@ module.exports = function () {
 		this.topic = topic
 		this.broker = broker
 		this.partition = partition
-		this.interval = 0
+		this.interval = this.topic.interval
 		this.offset = 0
 		this.maxSize = 300 * 1024 //TODO set via option
 		this.fetcher = fetch.bind(this)

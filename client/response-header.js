@@ -56,7 +56,6 @@ module.exports = function (
 	// RESPONSE_LENGTH = int32 // Length in bytes of entire response (excluding this field)
 	// ERROR_CODE = int16
 	ResponseHeader.prototype.parse = function () {
-		console.assert(this.complete())
 		this.length = this.buffer.readUInt32BE(0)
 		this.errno = this.buffer.readUInt16BE(4)
 	}

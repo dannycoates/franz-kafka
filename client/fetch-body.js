@@ -17,7 +17,6 @@ module.exports = function (
 	// /                        MESSAGES (0 or more)                   /
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 	FetchBody.prototype.parse = function () {
-		console.assert(this.complete())
 		var messages = []
 		var offset = 0
 		while (offset < this.buffer.length) {
