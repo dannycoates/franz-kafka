@@ -13,8 +13,12 @@ module.exports = function (logger) {
 	}
 
 	function fetch() {
-		logger.log('fetching', this.topic.name, 'broker', this.broker.id, 'partition', this.partition)
-		this.broker.fetch(this.topic, this.partition, this.maxSize, this.fetchResponder)
+		this.broker.fetch(
+			this.topic,
+			this.partition,
+			this.maxSize,
+			this.fetchResponder
+		)
 	}
 
 	function Partition(topic, broker, partition) {
@@ -36,10 +40,20 @@ module.exports = function (logger) {
 	}
 
 	Partition.prototype.start = function () {
+		logger.info(
+			'start', this.topic.name,
+			'broker', this.broker.id,
+			'partition', this.partition
+		)
 		this.fetcher()
 	}
 
 	Partition.prototype.stop = function () {
+		logger.info(
+			'stop', this.topic.name,
+			'broker', this.broker.id,
+			'partition', this.partition
+		)
 		clearTimeout(this.timer)
 	}
 

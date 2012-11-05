@@ -1,4 +1,5 @@
 module.exports = function (
+	logger,
 	State,
 	ResponseHeader) {
 
@@ -17,6 +18,10 @@ module.exports = function (
 			var next = this.state.next()
 			if (next === State.doneState) {
 				this.done = true
+				logger.info(
+					'response', this.state.constructor.name,
+					'length', this.state.buffer.length
+				)
 				this.cb(
 					this.state.error(),
 					this.state.buffer.length,

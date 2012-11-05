@@ -1,4 +1,5 @@
 module.exports = function (
+	logger,
 	net,
 	inherits,
 	EventEmitter,
@@ -9,7 +10,7 @@ module.exports = function (
 	ProduceRequest,
 	OffsetsRequest) {
 
-	function Client(options) {
+	function Client(id, options) {
 		var self = this
 		this.connection = net.connect(options)
 		this.connection.on(
@@ -32,6 +33,7 @@ module.exports = function (
 				self.emit('ready')
 			}
 		)
+		this.id = id
 		this.ready = true
 		this.readableSteam = new ReadableStream()
 		this.readableSteam.wrap(this.connection)
@@ -67,6 +69,11 @@ module.exports = function (
 
 	// cb: function (err, length, messages) {}
 	Client.prototype.fetch = function (topic, partition, maxSize, cb) {
+		logger.info(
+			'fetching', topic.name,
+			'broker', this.id,
+			'partition', partition
+		)
 		return this._send(
 			new FetchRequest(
 				topic.name,
@@ -82,6 +89,12 @@ module.exports = function (
 	// messages: array of: string, Buffer, Message
 	// partition: number
 	Client.prototype.publish = function (topic, messages, partition) {
+		logger.info(
+			'publishing', topic.name,
+			'messages', messages.length,
+			'broker', this.id,
+			'partition', partition
+		)
 		return this._send(
 			new ProduceRequest(
 				topic.name,
@@ -93,6 +106,10 @@ module.exports = function (
 	}
 
 	Client.prototype.offsets = function (time, maxCount, cb) {
+		logger.info(
+			'offsets', time,
+			'broker', this.id
+		)
 		return this._send(new OffsetsRequest(time, maxCount), cb)
 	}
 

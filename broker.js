@@ -28,10 +28,13 @@ module.exports = function (
 	Broker.prototype.connect = function () {
 		var self = this
 		if (!this.client) {
-			this.client = new Client({
-				host: this.host,
-				port: this.port
-			})
+			this.client = new Client(
+				this.id,
+				{
+					host: this.host,
+					port: this.port
+				}
+			)
 			this.client.once(
 				'connect',
 				function () {

@@ -57,6 +57,7 @@ module.exports = function (options) {
 		}
 		catch (e) {
 			logger.error('node-zookeeper could not be loaded')
+			throw e
 		}
 	}
 

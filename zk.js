@@ -142,7 +142,7 @@ module.exports = function (
 			function (next) {
 				self.zk.a_exists(path, false,
 					function (rc, err, stat) {
-						logger.log('exists', path, stat)
+						logger.info('exists', path, 'stat', stat)
 						next(err, stat)
 					}
 				)
@@ -151,7 +151,7 @@ module.exports = function (
 				if (stat) {
 					self.zk.a_set(path, data, stat.version,
 						function (rc, err, stat) {
-							logger.log('set', path, stat)
+							logger.info('set', path, 'stat', stat)
 							next(err, stat)
 						}
 					)
@@ -159,7 +159,7 @@ module.exports = function (
 				else {
 					self.zk.a_create(path, data, options,
 						function (rc, err, stat) {
-							logger.log('create', path, stat)
+							logger.info('create', path, 'stat', stat)
 							next(err, stat)
 						}
 					)
@@ -183,9 +183,9 @@ module.exports = function (
 			},
 			function (err) {
 				if (err) {
-					logger.log(err)
+					logger.error('create consumer roots', err)
 				}
-				logger.log('created roots')
+				logger.info('created roots')
 				cb(err)
 			}
 		)
@@ -202,7 +202,7 @@ module.exports = function (
 
 	ZK.prototype.registerTopics = function (topics, consumer, cb) {
 		var self = this
-		logger.log('registerTopics')
+		logger.info('registerTopics')
 		async.series([
 			function (next) {
 				self._createConsumerRoots(consumer.groupId, next)
@@ -217,7 +217,7 @@ module.exports = function (
 			}
 			],
 			function (err) {
-				logger.log('registeredTopics')
+				logger.info('registeredTopics')
 				cb(err)
 			}
 		)
