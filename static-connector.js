@@ -24,7 +24,7 @@ module.exports = function (
 	function StaticConnector(options) {
 		var self = this
 		this.options = options
-		this.allBrokers = new BrokerPool()
+		this.allBrokers = new BrokerPool('all')
 		this.producer = new Producer(this.allBrokers)
 		this.consumer = new Consumer(options.groupId, this.allBrokers)
 

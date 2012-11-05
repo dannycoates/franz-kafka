@@ -19,6 +19,12 @@ module.exports = function (
 
 	Consumer.prototype.consume = function (topic, partitions) {
 		logger.assert(Array.isArray(partitions))
+		logger.log(
+			'consuming', topic.name,
+			'partitions', partitions.length,
+			'group', this.groupId,
+			'consumer', this.consumerId
+		)
 		var name = topic.name
 		var owner = this.owners[name] || new Owner(topic, this.allBrokers)
 		this.owners[name] = owner

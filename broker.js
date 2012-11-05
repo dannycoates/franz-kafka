@@ -1,4 +1,5 @@
 module.exports = function (
+	logger,
 	inherits,
 	EventEmitter,
 	Client) {
@@ -16,28 +17,32 @@ module.exports = function (
 
 	function Broker(id, host, port) {
 		this.id = id
-		this.host = host
-		this.port = port
 		this.topicPartitions = {}
 		this.client = null
-		this.connect()
+		this.connect(host, port)
 		EventEmitter.call(this)
 	}
 	inherits(Broker, EventEmitter)
 
-	Broker.prototype.connect = function () {
+	Broker.prototype.connect = function (host, port) {
 		var self = this
 		if (!this.client) {
+			logger.log(
+				'connecting broker', self.id,
+				'host', host,
+				'port', port
+			)
 			this.client = new Client(
 				this.id,
 				{
-					host: this.host,
-					port: this.port
+					host: host,
+					port: port
 				}
 			)
 			this.client.once(
 				'connect',
 				function () {
+					logger.log('broker connected', self.id)
 					self.emit('connect')
 				}
 			)
@@ -45,19 +50,21 @@ module.exports = function (
 				'end',
 				function () {
 					//TODO: smarter reconnect
+					logger.log('broker ended', self.id)
 					self.connect()
 				}
 			)
 			this.client.on(
 				'ready',
 				function () {
+					logger.log('broker ready', self.id)
 					self.emit('ready')
 				}
 			)
 		}
 	}
 
-	Broker.prototype.ready = function () {
+	Broker.prototype.isReady = function () {
 		return this.client.ready
 	}
 
@@ -66,10 +73,16 @@ module.exports = function (
 	}
 
 	Broker.prototype.setTopicPartitions = function (name, count) {
+		logger.log(
+			'set broker partitions', this.id,
+			'topic', name,
+			'partitions', count
+		)
 		this.topicPartitions[name] = new TopicPartition(name, count)
 	}
 
 	Broker.prototype.clearTopicPartitions = function () {
+		logger.log('clear broker partitions', this.id)
 		this.topicPartitions = {}
 	}
 

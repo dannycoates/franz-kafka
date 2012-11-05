@@ -29,8 +29,10 @@ module.exports = function (
 		this.connection.on(
 			'drain',
 			function () {
-				self.ready = true
-				self.emit('ready')
+				if (!self.ready) { //TODO: why is connection.drain so frequent?
+					self.ready = true
+					self.emit('ready')
+				}
 			}
 		)
 		this.id = id
@@ -44,8 +46,10 @@ module.exports = function (
 
 	Client.prototype.drain = function (cb) {
 		var self = this
+		logger.log('draining', this.id)
 		this.receiver.close(
 			function () {
+				logger.log('drained', self.id)
 				// XXX is reopening correct here?
 				self.receiver.open()
 				cb()

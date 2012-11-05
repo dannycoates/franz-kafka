@@ -34,7 +34,7 @@ module.exports = function (
 	Producer.prototype.setBrokerTopicPartitionCount = function (id, name, count) {
 		var b = this.allBrokers.get(id)
 		if (b) {
-			var topicBrokers = this.topicBrokers[name] || new BrokerPool()
+			var topicBrokers = this.topicBrokers[name] || new BrokerPool(name)
 			topicBrokers.add(b)
 			this.topicBrokers[name] = topicBrokers
 			b.setTopicPartitions(name, count)

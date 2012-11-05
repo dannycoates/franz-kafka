@@ -19,19 +19,17 @@ module.exports = function (
 	function ZKConnector(options) {
 		var self = this
 		this.zk = new ZK(options)
-		this.allBrokers = new BrokerPool()
+		this.allBrokers = new BrokerPool('all')
 		this.producer = new Producer(this.allBrokers)
 		this.allBrokers.on(
 			'brokerAdded',
 			function (b) {
-				logger.log('broker added', b.id)
 				self.emit('brokerAdded', b)
 			}
 		)
 		this.allBrokers.on(
 			'brokerRemoved',
 			function (b) {
-				logger.log('broker removed', b.id)
 				self.emit('brokerRemoved', b)
 			}
 		)
@@ -104,7 +102,6 @@ module.exports = function (
 				self.zk.getTopicPartitions(self.interestedTopics, self.consumer, next)
 			},
 			function (topicPartitions) {
-				logger.log(topicPartitions)
 				for(var i = 0; i < topicPartitions.length; i++) {
 					var tp = topicPartitions[i]
 					self.consumer.consume(tp.topic, tp.partitions)

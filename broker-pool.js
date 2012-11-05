@@ -1,5 +1,6 @@
-module.exports = function (inherits, EventEmitter) {
-	function BrokerPool() {
+module.exports = function (logger, inherits, EventEmitter) {
+	function BrokerPool(name) {
+		this.name = name
 		this.brokers = []
 		this.brokersById = {}
 		this.current = 0
@@ -12,6 +13,10 @@ module.exports = function (inherits, EventEmitter) {
 		if (i >= 0) {
 			this.brokers.splice(i, 1)
 			delete this.brokersById[broker.id]
+			logger.log(
+				'brokerpool', this.name,
+				'removed', broker.id
+			)
 			this.emit('brokerRemoved', broker)
 		}
 	}
@@ -20,6 +25,10 @@ module.exports = function (inherits, EventEmitter) {
 		if (this.brokers.indexOf(broker) < 0) {
 			this.brokers.push(broker)
 			this.brokersById[broker.id] = broker
+			logger.log(
+				'brokerpool', this.name,
+				'added', broker.id
+			)
 			this.emit('brokerAdded', broker)
 		}
 	}
@@ -32,7 +41,7 @@ module.exports = function (inherits, EventEmitter) {
 	BrokerPool.prototype.nextReady = function () {
 		for (var i = 0; i < this.brokers.length; i++) {
 			var b = this.next()
-			if (b.ready()) {
+			if (b.isReady()) {
 				break
 			}
 		}
@@ -44,7 +53,7 @@ module.exports = function (inherits, EventEmitter) {
 		var n = (Math.floor(Math.random() * len))
 		for (var i = 0; i < len; i++) {
 			var b = this.brokers[n]
-			if (b.ready()) {
+			if (b.isReady()) {
 				break
 			}
 			n = (n + 1) % len
@@ -68,7 +77,7 @@ module.exports = function (inherits, EventEmitter) {
 		return this.brokers
 	}
 
-	BrokerPool.nil = new BrokerPool()
+	BrokerPool.nil = new BrokerPool('nil')
 
 	return BrokerPool
 }
