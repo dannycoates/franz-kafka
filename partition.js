@@ -13,7 +13,7 @@ module.exports = function (logger) {
 	}
 
 	function fetch() {
-		logger.log("fetching " + this.topic.name + ':' + this.broker.id + '-' + this.partition)
+		logger.log('fetching', this.topic.name, 'broker', this.broker.id, 'partition', this.partition)
 		this.broker.fetch(this.topic, this.partition, this.maxSize, this.fetchResponder)
 	}
 

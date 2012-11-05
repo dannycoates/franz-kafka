@@ -7,9 +7,11 @@
     "int53": "*",
     "async": "*",
     "readable-stream": "*",
-    "snappy": "*",
-    "buffer-crc32": "*",
-    "zookeeper": "*"
+    "buffer-crc32": "*"
+  },
+  "optionalDependencies" : {
+    "snappy" : "*",
+    "zookeeper" : "*"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

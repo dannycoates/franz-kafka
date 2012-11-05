@@ -142,8 +142,7 @@ module.exports = function (
 			function (next) {
 				self.zk.a_exists(path, false,
 					function (rc, err, stat) {
-						logger.log('exists ' + path)
-						logger.log(stat)
+						logger.log('exists', path, stat)
 						next(err, stat)
 					}
 				)
@@ -152,8 +151,7 @@ module.exports = function (
 				if (stat) {
 					self.zk.a_set(path, data, stat.version,
 						function (rc, err, stat) {
-							logger.log('set ' + path)
-							logger.log(stat)
+							logger.log('set', path, stat)
 							next(err, stat)
 						}
 					)
@@ -161,8 +159,7 @@ module.exports = function (
 				else {
 					self.zk.a_create(path, data, options,
 						function (rc, err, stat) {
-							logger.log('create ' + path)
-							logger.log(stat)
+							logger.log('create', path, stat)
 							next(err, stat)
 						}
 					)

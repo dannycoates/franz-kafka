@@ -13,7 +13,8 @@ var kafka = new Kafka({
 	// }],
 	compression: 'gzip',
 	queueTime: 2000,
-	batchSize: 200
+	batchSize: 200,
+	logger: console
 })
 
 kafka.connect(function () {

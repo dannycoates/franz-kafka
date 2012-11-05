@@ -24,14 +24,14 @@ module.exports = function (
 		this.allBrokers.on(
 			'brokerAdded',
 			function (b) {
-				logger.log('added ' + b.id)
+				logger.log('broker added', b.id)
 				self.emit('brokerAdded', b)
 			}
 		)
 		this.allBrokers.on(
 			'brokerRemoved',
 			function (b) {
-				logger.log('removed ' + b.id)
+				logger.log('broker removed', b.id)
 				self.emit('brokerRemoved', b)
 			}
 		)
