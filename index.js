@@ -5,21 +5,12 @@ var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
 
 var noop = function () {}
-var nullLogger = {
-	info: noop,
-	log: noop,
-	warn: noop,
-	error: noop,
-	assert: noop,
-	trace: noop,
-	dir: noop,
-	time: noop,
-	timeEnd: noop
-}
+var nullLogger = {}
+Object.keys(console).forEach(function (f) { nullLogger[f] = noop })
 
 function setLogger(logger) {
 	if (logger) {
-		var required = Object.keys(nullLogger)
+		var required = Object.keys(console)
 		assert.ok(
 			required.every(
 				function (f) {

@@ -54,6 +54,7 @@ module.exports = function (
 		})
 		this.zk.on('brokers', this._brokersChanged.bind(this))
 		this.zk.on('broker-topic-partition', this._setBrokerTopicPartitionCount.bind(this))
+		this.zk.on('consumers-changed', this._rebalance.bind(this))
 	}
 
 	ZKConnector.prototype._brokersChanged = function (brokerIds) {

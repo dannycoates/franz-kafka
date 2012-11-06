@@ -49,7 +49,7 @@ module.exports = function (
 		var broker = this.brokerForTopic(topic.name)
 		if (broker) {
 			var ready = broker.publish(topic, messages) ||
-				this.topicBrokers[topic.name].someReady()
+				this.topicBrokers[topic.name].areAnyReady()
 			topic.setReady(ready)
 			return ready
 		}

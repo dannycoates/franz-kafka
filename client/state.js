@@ -11,8 +11,8 @@ module.exports = function (inherits) {
 	inherits(NullState, State)
 	NullState.prototype.read = function () { return false }
 
-	State.nullState = new NullState()
-	State.doneState = State.nullState //synonym for clarity
+	State.nil = new NullState()
+	State.done = State.nil //synonym for clarity
 
 	State.prototype.complete = function () {
 		return this.remainingBytes === 0
@@ -27,7 +27,7 @@ module.exports = function (inherits) {
 		return this.complete()
 	}
 
-	State.prototype.next = function () { return State.nullState }
+	State.prototype.next = function () { return State.nil }
 
 	State.prototype.toString = function () {
 		return "State " + this.complete() + " " + this.buffer.toString('hex')

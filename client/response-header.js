@@ -63,7 +63,7 @@ module.exports = function (
 	ResponseHeader.prototype.next = function () {
 		this.parse()
 		if (this.errno !== 0) {
-			return State.doneState
+			return State.done
 		}
 		return new this.ResponseBody(this.length - 2)
 	}

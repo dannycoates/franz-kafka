@@ -8,8 +8,8 @@ module.exports = function (
 	Receiver,
 	FetchRequest,
 	ProduceRequest,
-	OffsetsRequest) {
-
+	OffsetsRequest
+) {
 	function Client(id, options) {
 		var self = this
 		this.connection = net.connect(options)

@@ -1,8 +1,8 @@
 module.exports = function (
 	logger,
 	State,
-	ResponseHeader) {
-
+	ResponseHeader
+) {
 	function Response(ResponseBody, cb) {
 		this.state = new ResponseHeader(ResponseBody)
 		this.cb = cb
@@ -16,7 +16,7 @@ module.exports = function (
 	Response.prototype.read = function (stream) {
 		while (this.state.read(stream)) {
 			var next = this.state.next()
-			if (next === State.doneState) {
+			if (next === State.done) {
 				this.done = true
 				logger.info(
 					'response', this.state.constructor.name,

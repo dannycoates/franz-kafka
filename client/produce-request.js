@@ -64,7 +64,7 @@ module.exports = function (
 	}
 
 	ProduceRequest.prototype.response = function (cb) {
-		return State.doneState
+		return State.done
 	}
 
 	return ProduceRequest

@@ -61,7 +61,7 @@ module.exports = function (logger, inherits, EventEmitter) {
 		return b
 	}
 
-	BrokerPool.prototype.someReady = function () {
+	BrokerPool.prototype.areAnyReady = function () {
 		return this.brokers.some(function (b) { return b.ready() })
 	}
 

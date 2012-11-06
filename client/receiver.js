@@ -17,7 +17,7 @@ module.exports = function (
 			}
 		)
 		this.queue = []
-		this.current = State.nullState
+		this.current = State.nil
 		this.closed = false
 		EventEmitter.call(this)
 	}
@@ -42,10 +42,10 @@ module.exports = function (
 	}
 
 	Receiver.prototype.next = function () {
-		if (this.isEmpty() && this.current !== State.nullState) {
+		if (this.isEmpty() && this.current !== State.nil) {
 			this.emit('empty')
 		}
-		this.current = this.queue.shift() || State.nullState
+		this.current = this.queue.shift() || State.nil
 	}
 
 	Receiver.prototype.read = function () {
@@ -60,7 +60,7 @@ module.exports = function (
 	Receiver.prototype.push = function (request, cb) {
 		if (this.closed) { return false } // or something
 		var response = request.response(cb)
-		if (response !== State.nullState) {
+		if (response !== State.nil) {
 			this.queue.push(response)
 		}
 		return true
