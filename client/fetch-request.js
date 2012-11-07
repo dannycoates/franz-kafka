@@ -27,6 +27,7 @@ module.exports = function (
 	// OFFSET   = int64 // Offset in topic and partition to start from
 	// MAX_SIZE = int32 // MAX_SIZE of the message set to return
 	FetchRequest.prototype.serialize = function (stream, cb) {
+		var err = null
 		var payload = new Buffer(12)
 		int53.writeUInt64BE(this.offset, payload)
 		payload.writeUInt32BE(this.maxSize, 8)
@@ -36,8 +37,14 @@ module.exports = function (
 			this.topic,
 			this.partition
 		)
-		header.serialize(stream)
-		cb(stream.write(payload))
+		try {
+			header.serialize(stream)
+			var written = stream.write(payload)
+		}
+		catch (e) {
+			err = e
+		}
+		cb(err, written)
 	}
 
 	FetchRequest.prototype.response = function (cb) {

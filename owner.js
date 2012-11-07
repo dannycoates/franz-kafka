@@ -30,7 +30,7 @@ module.exports = function (Partition) {
 			var name = partitions[i]
 			var p = this.partitions[name]
 			if (p) {
-				p.stop()
+				p.pause()
 				delete this.partitions[name]
 			}
 		}
@@ -40,20 +40,18 @@ module.exports = function (Partition) {
 		return Object.keys(this.partitions).length > 0
 	}
 
-	Owner.prototype.drain = function (cb) {
-		var self = this
-		var partitions = Object.keys(this.partitions).map(
-			function (name) {
-				return self.partitions[name]
-			}
-		)
-		async.forEach(
-			partitions,
-			function (partition, next) {
-				partition.drain(next)
-			},
-			cb
-		)
+	Owner.prototype.pause = function () {
+		var partitions = Object.keys(this.partitions)
+		for (var i = 0; i < partitions.length; i++) {
+			this.partitions[partitions[i]].pause()
+		}
+	}
+
+	Owner.prototype.resume = function () {
+		var partitions = Object.keys(this.partitions)
+		for (var i = 0; i < partitions.length; i++) {
+			this.partitions[partitions[i]].resume()
+		}
 	}
 
 	return Owner

@@ -72,22 +72,20 @@ module.exports = function (
 		}
 	}
 
-	Kafka.prototype.topic = function (name) {
+	Kafka.prototype.topic = function (name, options) {
+		options = options || {}
+		options.compression = options.compression || this.compression
+		options.batchSize = options.batchSize || this.batchSize
+		options.queueTime = options.queueTime || this.queueTime
+		options.interval = options.interval || 1000
 		var topic = this.topics[name] ||
 			new Topic(
 				name,
-				this.connector,
-				this.compression,
-				this.batchSize,
-				this.queueTime
+				this.connector.producer, //TODO
+				this.connector.consumer,
+				options
 			)
 		this.topics[name] = topic
-		return topic
-	}
-
-	Kafka.prototype.consume = function (name, interval, partitions) {
-		var topic = this.topic(name)
-		topic.consume(interval || 1000, partitions)
 		return topic
 	}
 

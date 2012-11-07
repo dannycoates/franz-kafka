@@ -45,10 +45,10 @@ module.exports = function (
 		return (this.topicBrokers[name] || BrokerPool.nil).nextReady()
 	}
 
-	Producer.prototype.publish = function (topic, messages) {
+	Producer.prototype.publish = function (topic, messages, cb) {
 		var broker = this.brokerForTopic(topic.name)
 		if (broker) {
-			var ready = broker.publish(topic, messages) ||
+			var ready = broker.publish(topic, messages, cb) ||
 				this.topicBrokers[topic.name].areAnyReady()
 			topic.setReady(ready)
 			return ready

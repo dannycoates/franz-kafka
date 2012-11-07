@@ -46,24 +46,30 @@ module.exports = function (
 		var payload
 		this._compress(
 			function (err, buffer) {
+				var err = null
 				var header = new RequestHeader(
 					buffer.length + 4,
 					RequestHeader.types.PRODUCE,
 					self.topic,
 					self.partition
 				)
-				header.serialize(stream)
-
-				var mlen = new Buffer(4)
-				mlen.writeUInt32BE(buffer.length, 0)
-				stream.write(mlen)
-
-				cb(stream.write(buffer))
+				try {
+					header.serialize(stream)
+					var mlen = new Buffer(4)
+					mlen.writeUInt32BE(buffer.length, 0)
+					stream.write(mlen)
+					var written = stream.write(buffer)
+				}
+				catch (e) {
+					err = e
+				}
+				cb(err, written)
 			}
 		)
 	}
 
 	ProduceRequest.prototype.response = function (cb) {
+		cb()
 		return State.done
 	}
 

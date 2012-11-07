@@ -8,8 +8,13 @@ module.exports = function (logger) {
 			return
 		}
 		this.offset += length
-		this.topic.parseMessages(messages)
-		this._loop()
+		if (this.paused) {
+			this.bufferedMessages = messages
+		}
+		else {
+			this.topic.parseMessages(messages)
+			this._loop()
+		}
 	}
 
 	function fetch() {
@@ -30,6 +35,8 @@ module.exports = function (logger) {
 		this.maxSize = 300 * 1024 //TODO set via option
 		this.fetcher = fetch.bind(this)
 		this.fetchResponder = handleResponse.bind(this)
+		this.paused = false
+		this.bufferedMessages = null
 		this.timer = null
 	}
 
@@ -39,33 +46,37 @@ module.exports = function (logger) {
 		}
 	}
 
-	Partition.prototype.start = function () {
+	Partition.prototype.flush = function () {
+		if (this.bufferedMessages) {
+			this.topic.parseMessages(this.bufferedMessages)
+			this.bufferedMessages = null
+		}
+	}
+
+	Partition.prototype.resume = function () {
 		logger.info(
-			'start', this.topic.name,
+			'resume', this.topic.name,
 			'broker', this.broker.id,
 			'partition', this.partition
 		)
+		this.paused = false
+		this.flush()
 		this.fetcher()
 	}
 
-	Partition.prototype.stop = function () {
+	Partition.prototype.pause = function () {
 		logger.info(
-			'stop', this.topic.name,
+			'pause', this.topic.name,
 			'broker', this.broker.id,
 			'partition', this.partition
 		)
+		this.paused = true
 		clearTimeout(this.timer)
 	}
 
 	Partition.prototype.reset = function () {
-		this.stop()
-		this.start()
-	}
-
-	Partition.prototype.drain = function (cb) {
-		this.stop()
-		this.broker.drain(cb)
-		//TODO when to start again?
+		this.pause()
+		this.resume()
 	}
 
 	return Partition

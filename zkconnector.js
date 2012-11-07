@@ -39,7 +39,7 @@ module.exports = function (
 		this.hasPendingTopics = false
 		this.interestedTopics = {}
 		this.registerTopics = registerTopics.bind(this)
-		this.consumer = new Consumer(options.groupId, this.allBrokers)
+		this.consumer = new Consumer(this, options.groupId, this.allBrokers)
 		this.connect()
 		EventEmitter.call(this)
 	}
@@ -130,10 +130,6 @@ module.exports = function (
 		this.hasPendingTopics = true
 		this.interestedTopics[topic.name] = topic
 		process.nextTick(this.registerTopics)
-	}
-
-	ZKConnector.prototype.publish = function (topic, messages) {
-		return this.producer.publish(topic, messages)
 	}
 
 	return ZKConnector

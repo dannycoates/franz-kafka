@@ -26,7 +26,7 @@ module.exports = function (
 		this.options = options
 		this.allBrokers = new BrokerPool('all')
 		this.producer = new Producer(this.allBrokers)
-		this.consumer = new Consumer(options.groupId, this.allBrokers)
+		this.consumer = new Consumer(this, options.groupId, this.allBrokers)
 
 		this.allBrokers.once('brokerAdded',
 			function (broker) {
@@ -66,10 +66,6 @@ module.exports = function (
 
 	StaticConnector.prototype.stopConsuming = function (topic, partitions) {
 		this.consumer.stop(topic, partitions)
-	}
-
-	StaticConnector.prototype.publish = function (topic, messages) {
-		return this.producer.publish(topic, messages)
 	}
 
 	return StaticConnector

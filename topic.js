@@ -1,18 +1,32 @@
 module.exports = function (
 	inherits,
-	EventEmitter,
+	Stream,
 	MessageBuffer) {
 
-	function Topic(name, connector, compression, batchSize, queueTime) {
+	function Topic(name, producer, consumer, options) {
 		this.name = name || ''
-		this.interval = 0
-		this.connector = connector
+		this.interval = options.interval
+		this.producer = producer
+		this.consumer = consumer
+		this.partitions = options.partitions
 		this.ready = true
-		this.compression = compression
-		this.messages = new MessageBuffer(this, batchSize, queueTime, connector)
-		EventEmitter.call(this)
+		this.compression = options.compression
+		this.readable = true
+		this.writable = true
+		this.encoding = null
+		this.messages = new MessageBuffer(
+			this,
+			options.batchSize,
+			options.queueTime,
+			this.producer
+		)
+		Stream.call(this)
 	}
-	inherits(Topic, EventEmitter)
+	inherits(Topic, Stream)
+
+	//emit end
+	//emit error
+	//emit close
 
 	Topic.prototype.parseMessages = function(messages) {
 		var self = this
@@ -22,7 +36,10 @@ module.exports = function (
 				function (payloads) {
 					payloads.forEach(
 						function (data) {
-							self.emit('message', data)
+							if (self.encoding) {
+								data = data.toString(self.encoding)
+							}
+							self.emit('data', data)
 						}
 					)
 				}
@@ -30,28 +47,51 @@ module.exports = function (
 		}
 	}
 
+	// Readable Stream
+
+	Topic.prototype.error = function (err) {
+		this.emit('error', err)
+	}
+
+	Topic.prototype.pause = function () {
+		return this.consumer.pause(this)
+	}
+
+	Topic.prototype.resume = function () {
+		return this.consumer.resume(this)
+	}
+
+	Topic.prototype.destroy = function () {
+		this.consumer.stop(this)
+	}
+
+	Topic.prototype.setEncoding = function (encoding) {
+		this.encoding = encoding
+	}
+
+	//Writable Stream
+
 	Topic.prototype.setReady = function (ready) {
 		if(ready && !this.ready) {
-			this.emit('ready')
+			this.emit('drain')
 		}
 		this.ready = ready
 	}
 
-	Topic.prototype.publish = function (messages) {
-		var self = this
-		if (!Array.isArray(messages)) {
-			messages = [messages]
+	Topic.prototype.write = function (data, encoding) {
+		if(!Buffer.isBuffer(data)) {
+			encoding = encoding || 'utf8'
+			data = new Buffer(data, encoding)
 		}
-		return messages.every(
-			function (m) {
-				return self.messages.push(m)
-			}
-		)
+		return this.messages.push(data)
 	}
 
-	Topic.prototype.consume = function (interval, partitions) { //TODO: starting offset?
-		this.interval = interval
-		this.connector.consume(this, partitions)
+	Topic.prototype.end = function (data, encoding) {
+		this.write(data, encoding)
+	}
+
+	Topic.prototype.destroySoon = function () {
+		this.destroy()
 	}
 
 	return Topic

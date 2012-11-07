@@ -20,10 +20,10 @@ var kafka = new Kafka({
 kafka.connect(function () {
 
 	//var foo = kafka.topic('foo')
-	var bar = kafka.consume('bar', 200, ['0-0'])
+	var bar = kafka.topic('bar')
 
 	bar.on(
-		'message',
+		'data',
 		function (m) {
 			//console.log(m.toString())
 		}
@@ -31,11 +31,13 @@ kafka.connect(function () {
 
 	setInterval(
 		function () {
-			bar.publish("the time is: " + Date.now())
+			bar.write("the time is: " + Date.now())
 			//foo.publish("a random number is: " + Math.random())
 		},
 		100
 	)
+
+	bar.resume()
 
 	}
 )

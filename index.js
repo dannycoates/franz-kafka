@@ -3,6 +3,7 @@ var os = require('os')
 var async = require('async')
 var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
+var Stream = require('stream')
 
 var noop = function () {}
 var nullLogger = {}
@@ -37,7 +38,7 @@ module.exports = function (options) {
 	var BrokerPool = require('./broker-pool')(logger, inherits, EventEmitter)
 	var Producer = require('./producer')(inherits, EventEmitter, BrokerPool)
 	var MessageBuffer = require('./message-buffer')()
-	var Topic = require('./topic')(inherits, EventEmitter, MessageBuffer)
+	var Topic = require('./topic')(inherits, Stream, MessageBuffer)
 	var StaticConnector = require('./static-connector')(logger, inherits, EventEmitter, Producer, Consumer, BrokerPool, Broker)
 
 	if (options.zookeeper) {

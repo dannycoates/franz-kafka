@@ -90,13 +90,13 @@ module.exports = function (
 		this.client.fetch(topic, partition, maxSize, cb)
 	}
 
-	Broker.prototype.publish = function (topic, messages) {
+	Broker.prototype.publish = function (topic, messages, cb) {
 		var partition = 0
 		var tp = this.topicPartitions[topic.name]
 		if (tp) {
 			partition = tp.next()
 		}
-		return this.client.publish(topic, messages, partition)
+		return this.client.publish(topic, messages, partition, cb)
 	}
 
 	Broker.prototype.drain = function (cb) {

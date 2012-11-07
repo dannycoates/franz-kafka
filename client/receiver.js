@@ -6,12 +6,14 @@ module.exports = function (
 	function Receiver(stream) {
 		var self = this
 		this.stream = stream
-		this.stream.on('readable',
+		this.stream.on(
+			'readable',
 			function () {
 				self.read()
 			}
 		)
-		this.stream.on('end',
+		this.stream.on(
+			'end',
 			function () {
 				self.closed = true
 			}

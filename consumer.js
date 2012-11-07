@@ -10,7 +10,8 @@ module.exports = function (
 		return groupId + '_' + os.hostname() + '-' + Date.now() + '-' + "DEADBEEF"
 	}
 
-	function Consumer(groupId, allBrokers) {
+	function Consumer(connector, groupId, allBrokers) {
+		this.connector = connector
 		this.groupId = groupId
 		this.consumerId = genConsumerId(this.groupId)
 		this.allBrokers = allBrokers
@@ -49,19 +50,36 @@ module.exports = function (
 	}
 
 	Consumer.prototype.drain = function (cb) {
-		var self = this
-		var owners = Object.keys(this.owners).map(
-			function (name) {
-				return self.owners[name]
-			}
-		)
+		var owners = Object.keys(this.owners)
+		for (var i = 0; i < owners.length; i++) {
+			this.owners[owners[i]].pause()
+		}
 		async.forEach(
-			owners,
-			function (owner, next) {
-				owner.drain(next)
+			this.allBrokers.all(),
+			function (broker, next) {
+				broker.drain(next)
 			},
 			cb
 		)
+	}
+
+	Consumer.prototype.pause = function (topic) {
+		var name = topic.name
+		var owner = this.owners[name]
+		if (owner) {
+			owner.pause()
+		}
+	}
+
+	Consumer.prototype.resume = function (topic) {
+		var name = topic.name
+		var owner = this.owners[name]
+		if (!owner) {
+			this.connector.consume(topic, topic.partitions)
+		}
+		else {
+			owner.resume()
+		}
 	}
 
 	return Consumer

@@ -1,20 +1,27 @@
 module.exports = function () {
 
+	function handleResponse(err) {
+		if (err) {
+			this.topic.error(err)
+		}
+	}
+
 	function send() {
-		var sent = this.connector.publish(this.topic, this.messages)
+		var sent = this.producer.publish(this.topic, this.messages, this.produceResponder)
 		this.reset()
 		return sent
 	}
 
-	function MessageBuffer(topic, batchSize, queueTime, connector) {
+	function MessageBuffer(topic, batchSize, queueTime, producer) {
 		var self = this
 		this.topic = topic
 		this.batchSize = batchSize
 		this.queueTime = queueTime
-		this.connector = connector
+		this.producer = producer
 		this.messages = []
 		this.timer = null
 		this.send = send.bind(this)
+		this.produceResponder = handleResponse.bind(this)
 	}
 
 	MessageBuffer.prototype.reset = function () {

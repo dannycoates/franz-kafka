@@ -61,7 +61,10 @@ module.exports = function (
 		var self = this
 		request.serialize(
 			this.connection,
-			function (written) {
+			function (err, written) {
+				if (err) {
+					return cb(err)
+				}
 				if (!written) {
 					self.ready = false
 				}
@@ -92,7 +95,7 @@ module.exports = function (
 	// topic: a Topic object
 	// messages: array of: string, Buffer, Message
 	// partition: number
-	Client.prototype.publish = function (topic, messages, partition) {
+	Client.prototype.publish = function (topic, messages, partition, cb) {
 		logger.info(
 			'publishing', topic.name,
 			'messages', messages.length,
@@ -105,7 +108,8 @@ module.exports = function (
 				messages.map(Message.create),
 				partition,
 				topic.compression
-			)
+			),
+			cb
 		)
 	}
 
