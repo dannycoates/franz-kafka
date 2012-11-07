@@ -20,7 +20,7 @@ module.exports = function (
 
 	Consumer.prototype.consume = function (topic, partitions) {
 		logger.assert(Array.isArray(partitions))
-		logger.log(
+		logger.info(
 			'consuming', topic.name,
 			'partitions', partitions.length,
 			'group', this.groupId,

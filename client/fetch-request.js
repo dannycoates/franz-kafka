@@ -4,9 +4,9 @@ module.exports = function (
 	FetchBody,
 	int53) {
 
-	function FetchRequest(topic, offset, partition, maxSize) {
+	function FetchRequest(topic, offset, partitionId, maxSize) {
 		this.topic = topic || ""
-		this.partition = partition || 0
+		this.partitionId = partitionId || 0
 		this.offset = offset || 0
 		this.maxSize = maxSize || (1024 * 1024)
 	}
@@ -35,7 +35,7 @@ module.exports = function (
 			payload.length,
 			RequestHeader.types.FETCH,
 			this.topic,
-			this.partition
+			this.partitionId
 		)
 		try {
 			header.serialize(stream)

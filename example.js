@@ -1,4 +1,7 @@
 var Kafka = require('./index')
+var fs = require('fs')
+
+var file = fs.createWriteStream('./test.txt')
 
 var kafka = new Kafka({
 	zookeeper: 'localhost:2181',
@@ -7,37 +10,33 @@ var kafka = new Kafka({
 	// 	host: 'localhost',
 	// 	port: 9092,
 	// 	topics: {
-	// 		//foo: 2,
 	// 		bar: 1
 	// 	}
 	// }],
 	compression: 'gzip',
 	queueTime: 2000,
 	batchSize: 200,
+	maxFetchSize: 20480,
 	logger: console
 })
 
-kafka.connect(function () {
+file.once('open', function () {
 
-	//var foo = kafka.topic('foo')
-	var bar = kafka.topic('bar')
+	kafka.connect(function () {
 
-	bar.on(
-		'data',
-		function (m) {
-			//console.log(m.toString())
+		var bar = kafka.topic('bar')
+
+		bar.pipe(file)
+
+		setInterval(
+			function () {
+				bar.write("the time is: " + Date.now())
+			},
+			10
+		)
+
+		bar.resume()
+
 		}
 	)
-
-	setInterval(
-		function () {
-			bar.write("the time is: " + Date.now())
-			//foo.publish("a random number is: " + Math.random())
-		},
-		100
-	)
-
-	bar.resume()
-
-	}
-)
+})

@@ -20,25 +20,37 @@ module.exports = function (
 		this.topics = {}
 		this.options = options || {}
 		this.connector = null
-		this.queueTime = options.queueTime || 5000
-		this.batchSize = options.batchSize || 200
-		this.setCompression(options.compression)
+		this.topicDefaults = this.defaultOptions(options)
 		EventEmitter.call(this)
 	}
 	inherits(Kafka, EventEmitter)
 
-	Kafka.prototype.setCompression = function(string) {
+	function setCompression(string) {
+		var compression
 		switch (string && string.toLowerCase()) {
 			case 'gzip':
-				this.compression = Compression.GZIP
+				compression = Compression.GZIP
 				break;
 			case 'snappy':
-				this.compression = Compression.SNAPPY
+				compression = Compression.SNAPPY
 				break;
 			default:
-				this.compression = Compression.NONE
+				compression = Compression.NONE
 				break;
 		}
+		return compression
+	}
+
+	Kafka.prototype.defaultOptions = function (options) {
+		var defaults = {}
+		defaults.startOffset = options.startOffset || 0
+		defaults.queueTime = options.queueTime || 5000
+		defaults.batchSize = options.batchSize || 200
+		defaults.minFetchDelay = options.minFetchDelay || 0
+		defaults.maxFetchDelay = options.maxFetchDelay || 10000
+		defaults.maxFetchSize = options.maxFetchSize || (300 * 1024)
+		defaults.compression = setCompression(options.compression)
+		return defaults
 	}
 
 	Kafka.prototype.connect = function (onconnect) {
@@ -72,16 +84,23 @@ module.exports = function (
 		}
 	}
 
+	function setTopicOptions(topicOptions, defaults) {
+		topicOptions = topicOptions || {}
+		var keys = Object.keys(defaults)
+		var options = {}
+		for (var i = 0; i < keys.length; i++) {
+			var name = keys[i]
+			options[name] = topicOptions[name] || defaults[name]
+		}
+		return options
+	}
+
 	Kafka.prototype.topic = function (name, options) {
-		options = options || {}
-		options.compression = options.compression || this.compression
-		options.batchSize = options.batchSize || this.batchSize
-		options.queueTime = options.queueTime || this.queueTime
-		options.interval = options.interval || 1000
+		options = setTopicOptions(options, this.topicDefaults)
 		var topic = this.topics[name] ||
 			new Topic(
 				name,
-				this.connector.producer, //TODO
+				this.connector.producer,
 				this.connector.consumer,
 				options
 			)

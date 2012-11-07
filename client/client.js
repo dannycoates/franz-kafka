@@ -46,10 +46,10 @@ module.exports = function (
 
 	Client.prototype.drain = function (cb) {
 		var self = this
-		logger.log('draining', this.id)
+		logger.info('draining', this.id)
 		this.receiver.close(
 			function () {
-				logger.log('drained', self.id)
+				logger.info('drained', self.id)
 				// XXX is reopening correct here?
 				self.receiver.open()
 				cb()
@@ -75,17 +75,17 @@ module.exports = function (
 	}
 
 	// cb: function (err, length, messages) {}
-	Client.prototype.fetch = function (topic, partition, maxSize, cb) {
+	Client.prototype.fetch = function (name, partition, maxSize, cb) {
 		logger.info(
-			'fetching', topic.name,
+			'fetching', name,
 			'broker', this.id,
-			'partition', partition
+			'partition', partition.id
 		)
 		return this._send(
 			new FetchRequest(
-				topic.name,
-				topic.offset,
-				partition,
+				name,
+				partition.offset,
+				partition.id,
 				maxSize
 			),
 			cb
@@ -95,18 +95,18 @@ module.exports = function (
 	// topic: a Topic object
 	// messages: array of: string, Buffer, Message
 	// partition: number
-	Client.prototype.publish = function (topic, messages, partition, cb) {
+	Client.prototype.publish = function (topic, messages, partitionId, cb) {
 		logger.info(
 			'publishing', topic.name,
 			'messages', messages.length,
 			'broker', this.id,
-			'partition', partition
+			'partition', partitionId
 		)
 		return this._send(
 			new ProduceRequest(
 				topic.name,
 				messages.map(Message.create),
-				partition,
+				partitionId,
 				topic.compression
 			),
 			cb

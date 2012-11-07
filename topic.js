@@ -1,11 +1,14 @@
 module.exports = function (
+	logger,
 	inherits,
 	Stream,
 	MessageBuffer) {
 
 	function Topic(name, producer, consumer, options) {
 		this.name = name || ''
-		this.interval = options.interval
+		this.minFetchDelay = options.minFetchDelay
+		this.maxFetchDelay = options.maxFetchDelay
+		this.maxFetchSize = options.maxFetchSize
 		this.producer = producer
 		this.consumer = consumer
 		this.partitions = options.partitions
@@ -14,12 +17,13 @@ module.exports = function (
 		this.readable = true
 		this.writable = true
 		this.encoding = null
-		this.messages = new MessageBuffer(
+		this.outgoingMessages = new MessageBuffer(
 			this,
 			options.batchSize,
 			options.queueTime,
 			this.producer
 		)
+		this.bufferedMessages = []
 		Stream.call(this)
 	}
 	inherits(Topic, Stream)
@@ -31,7 +35,6 @@ module.exports = function (
 	Topic.prototype.parseMessages = function(messages) {
 		var self = this
 		for (var i = 0; i < messages.length; i++) {
-			//XXX do we need to preserve the order?
 			messages[i].unpack(
 				function (payloads) {
 					payloads.forEach(
@@ -39,12 +42,34 @@ module.exports = function (
 							if (self.encoding) {
 								data = data.toString(self.encoding)
 							}
-							self.emit('data', data)
+							if (self.paused) {
+								logger.info(
+									'buffering', self.name,
+									'length', self.bufferedMessages.length
+								)
+								self.bufferedMessages.push(data)
+							}
+							else {
+								self.emit('data', data)
+							}
 						}
 					)
 				}
 			)
 		}
+	}
+
+	Topic.prototype._flushBufferedMessages = function () {
+		this.paused = false
+		while(!this.paused && this.bufferedMessages.length > 0) {
+			this.emit('data', this.bufferedMessages.shift())
+		}
+		logger.info(
+			'flushed', this.name,
+			'remaining', this.bufferedMessages.length,
+			'paused', this.paused
+		)
+		return this.paused || this.bufferedMessages.length > 0
 	}
 
 	// Readable Stream
@@ -54,11 +79,17 @@ module.exports = function (
 	}
 
 	Topic.prototype.pause = function () {
-		return this.consumer.pause(this)
+		logger.info('pause', this.name)
+		this.paused = true
+		this.consumer.pause(this)
 	}
 
 	Topic.prototype.resume = function () {
-		return this.consumer.resume(this)
+		logger.info('resume', this.name)
+		this.paused = this._flushBufferedMessages()
+		if (!this.paused) {
+			this.consumer.resume(this)
+		}
 	}
 
 	Topic.prototype.destroy = function () {
@@ -83,7 +114,7 @@ module.exports = function (
 			encoding = encoding || 'utf8'
 			data = new Buffer(data, encoding)
 		}
-		return this.messages.push(data)
+		return this.outgoingMessages.push(data)
 	}
 
 	Topic.prototype.end = function (data, encoding) {

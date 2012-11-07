@@ -3,10 +3,10 @@ module.exports = function (
 	Message,
 	State) {
 
-	function ProduceRequest(topic, messages, partition, compression) {
+	function ProduceRequest(topic, messages, partitionId, compression) {
 		this.topic = topic || ""
 		this.messages = messages || []
-		this.partition = partition
+		this.partition = partitionId
 		this.compression = compression
 	}
 
@@ -51,7 +51,7 @@ module.exports = function (
 					buffer.length + 4,
 					RequestHeader.types.PRODUCE,
 					self.topic,
-					self.partition
+					self.partitionId
 				)
 				try {
 					header.serialize(stream)

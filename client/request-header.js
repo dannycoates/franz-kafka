@@ -1,9 +1,9 @@
 module.exports = function () {
 
-	function RequestHeader(payloadLength, type, topic, partition) {
+	function RequestHeader(payloadLength, type, topic, partitionId) {
 		type = type || 0
 		topic = topic || ""
-		partition = partition || 0
+		partitionId = partitionId || 0
 		payloadLength = payloadLength || 0
 		var topicLength = Buffer.byteLength(topic)
 		var length = payloadLength + topicLength + 8
@@ -12,7 +12,7 @@ module.exports = function () {
 		this.header.writeUInt16BE(type, 4)
 		this.header.writeUInt16BE(topicLength, 6)
 		this.header.write(topic, 8)
-		this.header.writeUInt32BE(partition, this.header.length - 4)
+		this.header.writeUInt32BE(partitionId, this.header.length - 4)
 	}
 
 	RequestHeader.types = {

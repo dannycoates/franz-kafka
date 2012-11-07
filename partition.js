@@ -1,48 +1,94 @@
 module.exports = function (logger) {
+
+
+	function exponentialBackoff(attempt, delay) {
+		return Math.random() * Math.pow(2, attempt) * (Math.max(delay, 1))
+	}
+
 	function handleResponse(err, length, messages) {
+		this.pending = false
 		if (err) {
 			return this.topic.error(err)
 		}
-		if (length === 0) {
-			//TODO no new messages, backoff
-			return
-		}
 		this.offset += length
 		if (this.paused) {
+			logger.info(
+				'buffered', messages.length,
+				'topic', this.topic.name,
+				'broker', this.broker.id,
+				'partition', this.id
+			)
 			this.bufferedMessages = messages
 		}
 		else {
 			this.topic.parseMessages(messages)
+			this._setFetchDelay(length === 0)
 			this._loop()
 		}
 	}
 
 	function fetch() {
-		this.broker.fetch(
-			this.topic,
-			this.partition,
-			this.maxSize,
-			this.fetchResponder
-		)
+		if (!this.pending) {
+			this.broker.fetch(
+				this.topic.name,
+				this,
+				this.maxSize,
+				this.fetchResponder
+			)
+			this.pending = true
+		}
+		else {
+			logger.warn(
+				'pending', this.topic.name,
+				'broker', this.broker.id,
+				'partition', this.id
+			)
+		}
 	}
 
-	function Partition(topic, broker, partition) {
+	function Partition(topic, broker, id) {
 		this.topic = topic
 		this.broker = broker
-		this.partition = partition
-		this.interval = this.topic.interval
+		this.id = id
+		this.fetchDelay = this.topic.minFetchDelay
+		this.minFetchDelay = this.topic.minFetchDelay
+		this.maxFetchDelay = this.topic.maxFetchDelay
+		this.emptyFetches = 0
 		this.offset = 0
-		this.maxSize = 300 * 1024 //TODO set via option
+		this.maxSize = this.topic.maxFetchSize
 		this.fetcher = fetch.bind(this)
 		this.fetchResponder = handleResponse.bind(this)
-		this.paused = false
+		this.paused = true
 		this.bufferedMessages = null
 		this.timer = null
+		this.pending = false
+	}
+
+	Partition.prototype._setFetchDelay = function (shouldDelay) {
+		if (shouldDelay) {
+			this.emptyFetches += 1
+			this.fetchDelay = Math.min(
+				exponentialBackoff(this.emptyFetches, this.minFetchDelay),
+				this.maxFetchDelay
+			)
+			logger.info(
+				'fetch', this.topic.name,
+				'delay', this.fetchDelay,
+				'empty', this.emptyFetches
+			)
+		}
+		else {
+			this.emptyFetches = 0
+			this.fetchDelay = this.minFetchDelay
+		}
 	}
 
 	Partition.prototype._loop = function () {
-		if (this.interval) {
-			this.timer = setTimeout(this.fetcher, this.interval)
+		if (this.fetchDelay) {
+			this.timer = setTimeout(this.fetcher, this.fetchDelay)
+		}
+		else {
+			this.fetcher()
 		}
 	}
 
@@ -57,7 +103,7 @@ module.exports = function (logger) {
 		logger.info(
 			'resume', this.topic.name,
 			'broker', this.broker.id,
-			'partition', this.partition
+			'partition', this.id
 		)
 		this.paused = false
 		this.flush()
@@ -68,7 +114,7 @@ module.exports = function (logger) {
 		logger.info(
 			'pause', this.topic.name,
 			'broker', this.broker.id,
-			'partition', this.partition
+			'partition', this.id
 		)
 		this.paused = true
 		clearTimeout(this.timer)

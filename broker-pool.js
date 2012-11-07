@@ -13,7 +13,7 @@ module.exports = function (logger, inherits, EventEmitter) {
 		if (i >= 0) {
 			this.brokers.splice(i, 1)
 			delete this.brokersById[broker.id]
-			logger.log(
+			logger.info(
 				'brokerpool', this.name,
 				'removed', broker.id
 			)
@@ -25,7 +25,7 @@ module.exports = function (logger, inherits, EventEmitter) {
 		if (this.brokers.indexOf(broker) < 0) {
 			this.brokers.push(broker)
 			this.brokersById[broker.id] = broker
-			logger.log(
+			logger.info(
 				'brokerpool', this.name,
 				'added', broker.id
 			)

@@ -4,9 +4,11 @@ module.exports = function (Partition) {
 		this.topic = topic
 		this.brokers = brokers
 		this.partitions = {}
+		this.paused = true
 	}
 
 	Owner.prototype.consume = function (partitions) {
+		this.paused = false
 		for (var i = 0; i < partitions.length; i++) {
 			var name = partitions[i]
 			var split = name.split('-')
@@ -41,17 +43,23 @@ module.exports = function (Partition) {
 	}
 
 	Owner.prototype.pause = function () {
-		var partitions = Object.keys(this.partitions)
-		for (var i = 0; i < partitions.length; i++) {
-			this.partitions[partitions[i]].pause()
+		if (!this.paused) {
+			var partitions = Object.keys(this.partitions)
+			for (var i = 0; i < partitions.length; i++) {
+				this.partitions[partitions[i]].pause()
+			}
 		}
+		this.paused = true
 	}
 
 	Owner.prototype.resume = function () {
-		var partitions = Object.keys(this.partitions)
-		for (var i = 0; i < partitions.length; i++) {
-			this.partitions[partitions[i]].resume()
+		if (this.paused) {
+			var partitions = Object.keys(this.partitions)
+			for (var i = 0; i < partitions.length; i++) {
+				this.partitions[partitions[i]].resume()
+			}
 		}
+		this.paused = false
 	}
 
 	return Owner

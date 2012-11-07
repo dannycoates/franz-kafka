@@ -27,7 +27,7 @@ module.exports = function (
 	Broker.prototype.connect = function (host, port) {
 		var self = this
 		if (!this.client) {
-			logger.log(
+			logger.info(
 				'connecting broker', self.id,
 				'host', host,
 				'port', port
@@ -42,7 +42,7 @@ module.exports = function (
 			this.client.once(
 				'connect',
 				function () {
-					logger.log('broker connected', self.id)
+					logger.info('broker connected', self.id)
 					self.emit('connect')
 				}
 			)
@@ -50,14 +50,14 @@ module.exports = function (
 				'end',
 				function () {
 					//TODO: smarter reconnect
-					logger.log('broker ended', self.id)
+					logger.info('broker ended', self.id)
 					self.connect()
 				}
 			)
 			this.client.on(
 				'ready',
 				function () {
-					logger.log('broker ready', self.id)
+					logger.info('broker ready', self.id)
 					self.emit('ready')
 				}
 			)
@@ -73,7 +73,7 @@ module.exports = function (
 	}
 
 	Broker.prototype.setTopicPartitions = function (name, count) {
-		logger.log(
+		logger.info(
 			'set broker partitions', this.id,
 			'topic', name,
 			'partitions', count
@@ -82,21 +82,21 @@ module.exports = function (
 	}
 
 	Broker.prototype.clearTopicPartitions = function () {
-		logger.log('clear broker partitions', this.id)
+		logger.info('clear broker partitions', this.id)
 		this.topicPartitions = {}
 	}
 
-	Broker.prototype.fetch = function (topic, partition, maxSize, cb) {
-		this.client.fetch(topic, partition, maxSize, cb)
+	Broker.prototype.fetch = function (name, partition, maxSize, cb) {
+		this.client.fetch(name, partition, maxSize, cb)
 	}
 
 	Broker.prototype.publish = function (topic, messages, cb) {
-		var partition = 0
+		var partitionId = 0
 		var tp = this.topicPartitions[topic.name]
 		if (tp) {
-			partition = tp.next()
+			partitionId = tp.next()
 		}
-		return this.client.publish(topic, messages, partition, cb)
+		return this.client.publish(topic, messages, partitionId, cb)
 	}
 
 	Broker.prototype.drain = function (cb) {

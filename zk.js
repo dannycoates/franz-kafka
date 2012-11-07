@@ -16,7 +16,7 @@ module.exports = function (
 		})
 		this.zk.once(
 			'close',
-			function () { logger.log('zk close')}
+			function () { logger.info('zk close')}
 		)
 		EventEmitter.call(this)
 	}

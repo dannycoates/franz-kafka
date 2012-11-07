@@ -93,7 +93,7 @@ module.exports = function (
 
 	ZKConnector.prototype._rebalance = function () {
 		var self = this
-		logger.log('rebalancing')
+		logger.info('rebalancing')
 		async.waterfall([
 			function (next) {
 				self.consumer.drain(next)
