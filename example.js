@@ -16,7 +16,7 @@ var kafka = new Kafka({
 	compression: 'gzip',
 	queueTime: 2000,
 	batchSize: 200,
-	//maxFetchSize: 20480,
+	maxFetchSize: 128,
 	logger: console
 })
 var i = 0
@@ -28,6 +28,12 @@ file.once('open', function () {
 
 		baz.pipe(file)
 		baz.resume()
+
+		baz.on('error', function (err) {
+			console.error(err)
+			this.maxFetchSize = 300 * 1024
+			this.resume()
+		})
 
 		setInterval(
 			function () {

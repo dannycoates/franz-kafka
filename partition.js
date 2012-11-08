@@ -10,6 +10,7 @@ module.exports = function (logger) {
 	function handleResponse(err, length, messages) {
 		this.pending = false
 		if (err) {
+			this.topic.pause()
 			return this.topic.error(err)
 		}
 		this.offset += length
@@ -34,7 +35,7 @@ module.exports = function (logger) {
 			this.broker.fetch(
 				this.topic.name,
 				this,
-				this.maxSize,
+				this.topic.maxFetchSize,
 				this.fetchResponder
 			)
 			this.pending = true
@@ -53,11 +54,8 @@ module.exports = function (logger) {
 		this.broker = broker
 		this.id = id
 		this.fetchDelay = this.topic.minFetchDelay
-		this.minFetchDelay = this.topic.minFetchDelay
-		this.maxFetchDelay = this.topic.maxFetchDelay
 		this.emptyFetches = 0
 		this.offset = 0
-		this.maxSize = this.topic.maxFetchSize
 		this.fetcher = fetch.bind(this)
 		this.fetchResponder = handleResponse.bind(this)
 		this.paused = true
@@ -69,8 +67,8 @@ module.exports = function (logger) {
 	Partition.prototype._setFetchDelay = function (shouldDelay) {
 		this.emptyFetches = shouldDelay ? this.emptyFetches + 1 : 0
 		this.fetchDelay = Math.min(
-			exponentialBackoff(this.emptyFetches, this.minFetchDelay),
-			this.maxFetchDelay
+			exponentialBackoff(this.emptyFetches, this.topic.minFetchDelay),
+			this.topic.maxFetchDelay
 		)
 		logger.info(
 			'fetch', this.topic.name,
