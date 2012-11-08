@@ -109,9 +109,5 @@ module.exports = function (
 		return topic
 	}
 
-	Kafka.prototype.publish = function (name, messages) {
-		this.topic(name).publish(messages)
-	}
-
 	return Kafka
 }

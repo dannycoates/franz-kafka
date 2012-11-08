@@ -15,7 +15,7 @@ module.exports = function (
 	function ProduceRequest(topic, messages, partitionId, compression, maxSize) {
 		this.topic = topic || ""
 		this.messages = messages || []
-		this.partition = partitionId
+		this.partitionId = partitionId
 		this.compression = compression
 		this.maxSize = maxSize
 	}
