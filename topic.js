@@ -75,6 +75,9 @@ module.exports = function (
 	// Readable Stream
 
 	Topic.prototype.error = function (err) {
+		if (!this.paused) {
+			this.pause()
+		}
 		this.emit('error', err)
 	}
 

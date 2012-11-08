@@ -30,8 +30,9 @@ file.once('open', function () {
 		baz.resume()
 
 		baz.on('error', function (err) {
-			console.error(err)
-			this.maxFetchSize = 300 * 1024
+			console.error(err.message)
+			this.maxFetchSize = err.messageLength * 2
+			console.error('new size', this.maxFetchSize)
 			this.resume()
 		})
 

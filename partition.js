@@ -10,7 +10,6 @@ module.exports = function (logger) {
 	function handleResponse(err, length, messages) {
 		this.pending = false
 		if (err) {
-			this.topic.pause()
 			return this.topic.error(err)
 		}
 		this.offset += length

@@ -3,9 +3,18 @@ module.exports = function (
 	State,
 	Message) {
 
+	function FetchError(message, messageLength) {
+		this.message = message
+		this.messageLength = messageLength
+		Error.call(this)
+	}
+	inherits(FetchError, Error)
+	FetchError.prototype.name = 'Fetch Error'
+
 	function FetchBody(bytes) {
-		State.call(this, bytes)
 		this.bytesParsed = 0
+		this.lastMessageLength = 0
+		State.call(this, bytes)
 	}
 	inherits(FetchBody, State)
 
@@ -22,20 +31,28 @@ module.exports = function (
 		this.bytesParsed = 0
 		var blen = this.buffer.length
 		while (this.bytesParsed < blen) {
-			var len = this.buffer.readUInt32BE(this.bytesParsed)
-			var end = this.bytesParsed + len + 4
+			this.lastMessageLength = this.buffer.readUInt32BE(this.bytesParsed)
+			var end = this.bytesParsed + this.lastMessageLength + 4
 			if (end > blen) {
 				// the remainder of the buffer is a partial message
 				break;
 			}
 			messages.push(Message.parse(this.buffer.slice(this.bytesParsed, end)))
-			this.bytesParsed += (len + 4)
+			this.bytesParsed += (this.lastMessageLength + 4)
 		}
 		return messages
 	}
 
 	FetchBody.prototype.body = function () {
 		return this.parse()
+	}
+
+	FetchBody.prototype.error = function () {
+		var err = null
+		if (this.buffer.length > 0 && this.bytesParsed === 0) {
+			err = new FetchError("message larger than buffer", this.lastMessageLength)
+		}
+		return err
 	}
 
 	return FetchBody

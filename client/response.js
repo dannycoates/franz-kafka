@@ -24,16 +24,11 @@ module.exports = function (
 					'length', this.state.buffer.length,
 					'parsed', this.state.bytesParsed
 				)
-				if (this.state.buffer.length > 0 && this.state.bytesParsed === 0) {
-					this.cb(new Error("message larger than buffer"))
-				}
-				else {
-					this.cb(
-						this.state.error(),
-						this.state.bytesParsed,
-						body
-					)
-				}
+				this.cb(
+					this.state.error(),
+					this.state.bytesParsed,
+					body
+				)
 				break;
 			}
 			else {
