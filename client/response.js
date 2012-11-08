@@ -18,14 +18,16 @@ module.exports = function (
 			var next = this.state.next()
 			if (next === State.done) {
 				this.done = true
+				var body = this.state.body()
 				logger.info(
 					'response', this.state.constructor.name,
-					'length', this.state.buffer.length
+					'length', this.state.buffer.length,
+					'parsed', this.state.bytesParsed
 				)
 				this.cb(
 					this.state.error(),
-					this.state.buffer.length,
-					this.state.body()
+					this.state.bytesParsed,
+					body
 				)
 				break;
 			}

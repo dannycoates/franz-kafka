@@ -5,6 +5,7 @@ module.exports = function (
 
 	function FetchBody(bytes) {
 		State.call(this, bytes)
+		this.bytesParsed = 0
 	}
 	inherits(FetchBody, State)
 
@@ -18,11 +19,17 @@ module.exports = function (
 	// +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
 	FetchBody.prototype.parse = function () {
 		var messages = []
-		var offset = 0
-		while (offset < this.buffer.length) {
-			var len = this.buffer.readUInt32BE(offset)
-			messages.push(Message.parse(this.buffer.slice(offset, offset + len + 4)))
-			offset += (len + 4)
+		this.bytesParsed = 0
+		var blen = this.buffer.length
+		while (this.bytesParsed < blen) {
+			var len = this.buffer.readUInt32BE(this.bytesParsed)
+			var end = this.bytesParsed + len + 4
+			if (end > blen) {
+				// the remainder of the buffer is a partial message
+				break;
+			}
+			messages.push(Message.parse(this.buffer.slice(this.bytesParsed, end)))
+			this.bytesParsed += (len + 4)
 		}
 		return messages
 	}

@@ -10,32 +10,33 @@ var kafka = new Kafka({
 	// 	host: 'localhost',
 	// 	port: 9092,
 	// 	topics: {
-	// 		bar: 1
+	// 		baz: 1
 	// 	}
 	// }],
 	compression: 'gzip',
 	queueTime: 2000,
 	batchSize: 200,
-	maxFetchSize: 20480,
+	//maxFetchSize: 20480,
 	logger: console
 })
+var i = 0
 
 file.once('open', function () {
-
 	kafka.connect(function () {
 
-		var bar = kafka.topic('bar')
+		var baz = kafka.topic('bazzz')
 
-		bar.pipe(file)
+		baz.pipe(file)
+		baz.resume()
 
 		setInterval(
 			function () {
-				bar.write("the time is: " + Date.now())
+				baz.write('i is ' + i + '\n')
+				i++
+				//baz.write("the time is: " + Date.now())
 			},
 			10
 		)
-
-		bar.resume()
 
 		}
 	)

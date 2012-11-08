@@ -2,7 +2,9 @@ module.exports = function (logger) {
 
 
 	function exponentialBackoff(attempt, delay) {
-		return Math.random() * Math.pow(2, attempt) * (Math.max(delay, 1))
+		return Math.floor(
+			Math.random() * Math.pow(2, attempt) * (Math.max(delay, 1))
+		)
 	}
 
 	function handleResponse(err, length, messages) {
@@ -65,22 +67,18 @@ module.exports = function (logger) {
 	}
 
 	Partition.prototype._setFetchDelay = function (shouldDelay) {
-		if (shouldDelay) {
-			this.emptyFetches += 1
-			this.fetchDelay = Math.min(
-				exponentialBackoff(this.emptyFetches, this.minFetchDelay),
-				this.maxFetchDelay
-			)
-			logger.info(
-				'fetch', this.topic.name,
-				'delay', this.fetchDelay,
-				'empty', this.emptyFetches
-			)
-		}
-		else {
-			this.emptyFetches = 0
-			this.fetchDelay = this.minFetchDelay
-		}
+		this.emptyFetches = shouldDelay ? this.emptyFetches + 1 : 0
+		this.fetchDelay = Math.min(
+			exponentialBackoff(this.emptyFetches, this.minFetchDelay),
+			this.maxFetchDelay
+		)
+		logger.info(
+			'fetch', this.topic.name,
+			'broker', this.broker.id,
+			'partition', this.id,
+			'delay', this.fetchDelay,
+			'empty', this.emptyFetches
+		)
 	}
 
 	Partition.prototype._loop = function () {

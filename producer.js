@@ -57,7 +57,7 @@ module.exports = function (
 		// XXX im not sure how to best handle this case.
 		// for instance if you blast a bunch of publishes
 		// before the broker-partition assignments arrive
-		this.allBrokers.randomReady().publish(topic, messages)
+		this.allBrokers.randomReady().publish(topic, messages, cb)
 		return true
 	}
 
