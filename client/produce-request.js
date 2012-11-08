@@ -1,13 +1,23 @@
 module.exports = function (
+	inherits,
 	RequestHeader,
 	Message,
 	State) {
 
-	function ProduceRequest(topic, messages, partitionId, compression) {
+	function ProduceError(message, length) {
+		this.message = message
+		this.length = length
+		Error.call(this)
+	}
+	inherits(ProduceError, Error)
+	ProduceError.prototype.name = 'Produce Error'
+
+	function ProduceRequest(topic, messages, partitionId, compression, maxSize) {
 		this.topic = topic || ""
 		this.messages = messages || []
 		this.partition = partitionId
 		this.compression = compression
+		this.maxSize = maxSize
 	}
 
 	function messageToBuffer(m) { return m.toBuffer() }
@@ -47,6 +57,9 @@ module.exports = function (
 		this._compress(
 			function (err, buffer) {
 				var err = null
+				if (buffer.length > self.maxSize) {
+					return cb(new ProduceError("message too big", buffer.length))
+				}
 				var header = new RequestHeader(
 					buffer.length + 4,
 					RequestHeader.types.PRODUCE,

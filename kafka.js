@@ -49,6 +49,7 @@ module.exports = function (
 		defaults.minFetchDelay = options.minFetchDelay || 0
 		defaults.maxFetchDelay = options.maxFetchDelay || 10000
 		defaults.maxFetchSize = options.maxFetchSize || (300 * 1024)
+		defaults.maxMessageSize = options.maxMessageSize || 1000000
 		defaults.compression = setCompression(options.compression)
 		return defaults
 	}

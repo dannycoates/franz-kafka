@@ -15,30 +15,27 @@ module.exports = function (
 		return this.current
 	}
 
-	function Broker(id, host, port) {
+	function Broker(id, host, port, options) {
 		this.id = id
 		this.topicPartitions = {}
 		this.client = null
-		this.connect(host, port)
+		options = options || {}
+		options.host = host
+		options.port = port
+		this.connect(options)
 		EventEmitter.call(this)
 	}
 	inherits(Broker, EventEmitter)
 
-	Broker.prototype.connect = function (host, port) {
+	Broker.prototype.connect = function (options) {
 		var self = this
 		if (!this.client) {
 			logger.info(
 				'connecting broker', self.id,
-				'host', host,
-				'port', port
+				'host', options.host,
+				'port', options.port
 			)
-			this.client = new Client(
-				this.id,
-				{
-					host: host,
-					port: port
-				}
-			)
+			this.client = new Client(this.id, options)
 			this.client.once(
 				'connect',
 				function () {

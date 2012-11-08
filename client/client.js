@@ -107,7 +107,8 @@ module.exports = function (
 				topic.name,
 				messages.map(Message.create),
 				partitionId,
-				topic.compression
+				topic.compression,
+				topic.maxMessageSize
 			),
 			cb
 		)

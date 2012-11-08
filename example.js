@@ -17,6 +17,7 @@ var kafka = new Kafka({
 	queueTime: 2000,
 	batchSize: 200,
 	maxFetchSize: 128,
+	maxMessageSize: 1,
 	logger: console
 })
 var i = 0
@@ -31,8 +32,15 @@ file.once('open', function () {
 
 		baz.on('error', function (err) {
 			console.error(err.message)
-			this.maxFetchSize = err.messageLength * 2
-			console.error('new size', this.maxFetchSize)
+			switch(err.name) {
+				case 'Produce Error':
+					this.maxMessageSize = err.length
+					break;
+				case 'Fetch Error':
+					this.maxFetchSize = err.messageLength * 2
+					console.error('new size', this.maxFetchSize)
+					break;
+			}
 			this.resume()
 		})
 

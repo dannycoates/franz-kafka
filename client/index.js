@@ -27,7 +27,7 @@ module.exports = function (logger) {
 	var Receiver = require('./receiver')(inherits, EventEmitter, State)
 	var FetchRequest = require('./fetch-request')(RequestHeader, Response, FetchBody, int53)
 	var OffsetsRequest = require('./offsets-request')(RequestHeader, Response, OffsetsBody, int53)
-	var ProduceRequest = require('./produce-request')(RequestHeader, Message, State)
+	var ProduceRequest = require('./produce-request')(inherits, RequestHeader, Message, State)
 	var Client = require('./client')(
 		logger,
 		net,

@@ -9,6 +9,7 @@ module.exports = function (
 		this.minFetchDelay = options.minFetchDelay
 		this.maxFetchDelay = options.maxFetchDelay
 		this.maxFetchSize = options.maxFetchSize
+		this.maxMessageSize = options.maxMessageSize
 		this.producer = producer
 		this.consumer = consumer
 		this.partitions = options.partitions

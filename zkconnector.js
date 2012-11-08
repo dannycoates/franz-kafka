@@ -18,6 +18,7 @@ module.exports = function (
 	// }
 	function ZKConnector(options) {
 		var self = this
+		this.options = options
 		this.zk = new ZK(options)
 		this.allBrokers = new BrokerPool('all')
 		this.producer = new Producer(this.allBrokers)
@@ -76,7 +77,7 @@ module.exports = function (
 		var self = this
 		var split = info.split(':')
 		if (split.length > 2) {
-			var broker = new Broker(id, split[1], split[2])
+			var broker = new Broker(id, split[1], split[2], this.options)
 			broker.on('ready', this.brokerReady)
 			broker.once(
 				'connect',
