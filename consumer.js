@@ -18,21 +18,21 @@ module.exports = function (
 		this.owners = {}
 	}
 
-	Consumer.prototype.consume = function (topic, partitions) {
-		logger.assert(Array.isArray(partitions))
+	Consumer.prototype.consume = function (topic, partitionNames) {
+		logger.assert(Array.isArray(partitionNames))
 		logger.info(
 			'consuming', topic.name,
-			'partitions', partitions.length,
+			'partitions', partitionNames.length,
 			'group', this.groupId,
 			'consumer', this.consumerId
 		)
 		var name = topic.name
 		var owner = this.owners[name] || new Owner(topic, this.allBrokers)
 		this.owners[name] = owner
-		owner.consume(partitions)
+		owner.consume(partitionNames)
 	}
 
-	Consumer.prototype.stop = function (topic, partitions) {
+	Consumer.prototype.stop = function (topic, partitionNames) {
 		if (!topic) { // stop all
 			var topics = Object.keys(this.owners)
 			for (var i = 0; i < topics.length; i++) {
@@ -42,7 +42,7 @@ module.exports = function (
 		else {
 			var name = topic.name
 			var owner = this.owners[name]
-			owner.stop(partitions)
+			owner.stop(partitionNames)
 			if (!owner.hasPartitions()) {
 				delete this.owners[name]
 			}
@@ -79,6 +79,14 @@ module.exports = function (
 		}
 		else {
 			owner.resume()
+		}
+	}
+
+	Consumer.prototype.saveOffsets = function (topic) {
+		var name = topic.name
+		var owner = this.owners[name]
+		if (owner) {
+			owner.saveOffsets(this.connector)
 		}
 	}
 

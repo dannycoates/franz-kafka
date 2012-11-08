@@ -120,5 +120,9 @@ module.exports = function (logger) {
 		this.resume()
 	}
 
+	Partition.prototype.saveOffset = function (saver) {
+		saver.saveOffset(this)
+	}
+
 	return Partition
 }

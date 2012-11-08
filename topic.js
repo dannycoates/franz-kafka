@@ -72,6 +72,10 @@ module.exports = function (
 		return this.paused || this.bufferedMessages.length > 0
 	}
 
+	Topic.prototype.saveOffsets = function () {
+		this.consumer.saveOffsets(this)
+	}
+
 	// Readable Stream
 
 	Topic.prototype.error = function (err) {

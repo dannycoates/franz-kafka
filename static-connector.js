@@ -68,5 +68,14 @@ module.exports = function (
 		this.consumer.stop(topic, partitions)
 	}
 
+	StaticConnector.prototype.saveOffset = function (partition) {
+		logger.info(
+			'saving', partition.id,
+			'broker', partition.broker.id,
+			'offset', partition.offset
+		)
+		//TODO actually save
+	}
+
 	return StaticConnector
 }
