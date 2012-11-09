@@ -12,6 +12,13 @@ module.exports = function (
 
 	function noop() {}
 
+	// ZooKeeper is a discusting parasite that has unfortunately attached
+	// itself to poor Kafka.
+	//
+	// ZKConnector attempts to isolate the infestation from the rest of the code.
+	// It manages communication with the beast, and handles brokers and
+	// consumers, topic partitions, and offsets.
+	//
 	// options: {
 	//   zookeeper:
 	//   groupId:
@@ -97,10 +104,10 @@ module.exports = function (
 		logger.info('rebalancing')
 		async.waterfall([
 			function (next) {
+				self.consumer.stop()
 				self.consumer.drain(next)
 			},
 			function (next) {
-				self.consumer.stop()
 				self.zk.getTopicPartitions(self.interestedTopics, self.consumer, next)
 			},
 			function (topicPartitions) {
@@ -109,8 +116,7 @@ module.exports = function (
 					self.consumer.consume(tp.topic, tp.partitions)
 				}
 			}
-			]
-		)
+		])
 	}
 
 	function registerTopics() {
@@ -131,6 +137,15 @@ module.exports = function (
 		this.hasPendingTopics = true
 		this.interestedTopics[topic.name] = topic
 		process.nextTick(this.registerTopics)
+	}
+
+	ZKConnector.prototype.saveOffset = function (partition) {
+		logger.info(
+			'saving', partition.id,
+			'broker', partition.broker.id,
+			'offset', partition.offset
+		)
+		//TODO implement
 	}
 
 	return ZKConnector

@@ -7,6 +7,7 @@ module.exports = function (
 
 	function noop() {}
 
+	// A feable attempt a wrangling the horrible ZooKeeper API
 	function ZK(options) {
 		this.zk = new ZooKeeper({
 			connect: options.zookeeper,
@@ -16,7 +17,7 @@ module.exports = function (
 		})
 		this.zk.once(
 			'close',
-			function () { logger.info('zk close')}
+			function () { logger.info('zk close') }
 		)
 		EventEmitter.call(this)
 	}

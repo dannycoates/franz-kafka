@@ -6,16 +6,19 @@ module.exports = function (
 	StaticConnector,
 	Compression) {
 
-	/*
-	 * options: {
-	 *   zookeeper: 'address:port'
-	 *   brokers:   [{name: host: port: },...]
-	 *   compression: 'none', 'gzip', 'snappy'
-	 *   maxMessageSize: -1
-	 *   queueTime: 5000
-	 *   batchSize: 200
-	 * }
-	 */
+	// Kafka is the cornerstone of any nutritious queuing strategy.
+	// With it you can connect to a Kafka cluster and create
+	// Topics to your heart's content.
+	//
+	// options: {
+	//   zookeeper: 'address:port'
+	//   brokers:   [{name: host: port: },...]
+	//   compression: 'none', 'gzip', 'snappy'
+	//   maxMessageSize: -1
+	//   queueTime: 5000
+	//   batchSize: 200
+	// }
+	//
 	function Kafka(options) {
 		this.topics = {}
 		this.options = options || {}
@@ -54,6 +57,10 @@ module.exports = function (
 		return defaults
 	}
 
+	// Connect to your friendly neighborhood Kafka cluster.
+	// onconnect will be called when the first broker is available
+	//
+	// onconnect: function () {}
 	Kafka.prototype.connect = function (onconnect) {
 		var self = this
 		if (this.options.zookeeper) {
@@ -96,6 +103,12 @@ module.exports = function (
 		return options
 	}
 
+	// Create or get a topic
+	//
+	// name: string
+	// options: {
+	//
+	// }
 	Kafka.prototype.topic = function (name, options) {
 		options = setTopicOptions(options, this.topicDefaults)
 		var topic = this.topics[name] ||

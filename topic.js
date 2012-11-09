@@ -4,6 +4,12 @@ module.exports = function (
 	Stream,
 	MessageBuffer) {
 
+	// A Topic is Readable/Writable Stream.
+	// It's the main interaction point of the API.
+	// Consuming is via the node ReadableStream API.
+	// Producing is with the node WritableStream API.
+	// API API API
+	//
 	function Topic(name, producer, consumer, options) {
 		this.name = name || ''
 		this.minFetchDelay = options.minFetchDelay
@@ -30,7 +36,6 @@ module.exports = function (
 	inherits(Topic, Stream)
 
 	//emit end
-	//emit error
 	//emit close
 
 	Topic.prototype.parseMessages = function(messages) {
