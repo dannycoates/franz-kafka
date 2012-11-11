@@ -12,7 +12,7 @@ module.exports = function (
 
 	function noop() {}
 
-	// ZooKeeper is a discusting parasite that has unfortunately attached
+	// ZooKeeper is a disgusting parasite that has unfortunately attached
 	// itself to poor Kafka.
 	//
 	// ZKConnector attempts to isolate the infestation from the rest of the code.

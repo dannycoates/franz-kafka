@@ -14,10 +14,6 @@ module.exports = function (
 	//       id:
 	//       host:
 	//       port:
-	//       topics : {
-	//         foo: 5,
-	//         bar: 2
-	//       }
 	//     }
 	//   ]
 	// }
@@ -37,11 +33,6 @@ module.exports = function (
 		this.options.brokers.forEach(
 			function (b) {
 				var broker = new Broker(b.id, b.host, b.port, this.options)
-				Object.keys(b.topics).forEach( //TODO would be great to get rid of this
-					function (t) {
-						broker.setTopicPartitions(t, b.topics[t])
-					}
-				)
 				broker.once(
 					'connect',
 					function () {

@@ -10,6 +10,21 @@ module.exports = function (
 	// Producing is with the node WritableStream API.
 	// API API API
 	//
+	// name: string
+	// producer: Producer
+	// consumer: Consumer
+	// options: {
+	//   minFetchDelay: number (ms)
+	//   maxFetchDelay: number (ms)
+	//   maxFetchSize: number (bytes)
+	//   compression: Message.compression (emum)
+	//   batchSize: number (count)
+	//   queueTime: number (ms)
+	//   partitions: {
+	//     consume: [string] (broker-partition) ex. '0-0'
+	//     produce: [string] (broker:partitionCount) ex. '0:5'
+	//   }
+	// }
 	function Topic(name, producer, consumer, options) {
 		this.name = name || ''
 		this.minFetchDelay = options.minFetchDelay
@@ -18,7 +33,10 @@ module.exports = function (
 		this.maxMessageSize = options.maxMessageSize
 		this.producer = producer
 		this.consumer = consumer
-		this.partitions = options.partitions
+		if (options.partitions) {
+			this.producer.addPartitions(name, options.partitions.produce)
+			this.consumePartitions = options.partitions.consume
+		}
 		this.ready = true
 		this.compression = options.compression
 		this.readable = true

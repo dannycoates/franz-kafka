@@ -75,7 +75,7 @@ module.exports = function (
 		var name = topic.name
 		var owner = this.owners[name]
 		if (!owner) {
-			this.connector.consume(topic, topic.partitions)
+			this.connector.consume(topic, topic.consumePartitions)
 		}
 		else {
 			owner.resume()

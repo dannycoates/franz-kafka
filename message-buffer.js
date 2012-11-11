@@ -7,7 +7,7 @@ module.exports = function () {
 	}
 
 	function send() {
-		var sent = this.producer.publish(this.topic, this.messages, this.produceResponder)
+		var sent = this.producer.write(this.topic, this.messages, this.produceResponder)
 		this.reset()
 		return sent
 	}

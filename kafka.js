@@ -54,6 +54,7 @@ module.exports = function (
 		defaults.maxFetchSize = options.maxFetchSize || (300 * 1024)
 		defaults.maxMessageSize = options.maxMessageSize || 1000000
 		defaults.compression = setCompression(options.compression)
+		defaults.partitions = null
 		return defaults
 	}
 

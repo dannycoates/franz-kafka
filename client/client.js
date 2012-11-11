@@ -95,7 +95,7 @@ module.exports = function (
 	// topic: a Topic object
 	// messages: array of: string, Buffer, Message
 	// partition: number
-	Client.prototype.publish = function (topic, messages, partitionId, cb) {
+	Client.prototype.write = function (topic, messages, partitionId, cb) {
 		logger.info(
 			'publishing', topic.name,
 			'messages', messages.length,
