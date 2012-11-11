@@ -226,7 +226,8 @@ module.exports = function (
 
 	ZK.prototype.getTopicPartitions = function (topics, consumer, cb) {
 		//TODO
-		cb(null, [{topic: topics['bazzz'], partitions: ['0-0']}])
+		throw new Error("Not Implemented")
+		cb(null, [{topic: topics['bazzz'], partitions: ['0-0:0']}])
 	}
 
 	return ZK

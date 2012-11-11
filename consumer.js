@@ -18,18 +18,18 @@ module.exports = function (
 		this.owners = {}
 	}
 
-	Consumer.prototype.consume = function (topic, partitionNames) {
-		logger.assert(Array.isArray(partitionNames))
+	Consumer.prototype.consume = function (topic, partitionNamesWithOffsets) {
+		logger.assert(Array.isArray(partitionNamesWithOffsets))
 		logger.info(
 			'consuming', topic.name,
-			'partitions', partitionNames.length,
+			'partitions', partitionNamesWithOffsets.length,
 			'group', this.groupId,
 			'consumer', this.consumerId
 		)
 		var name = topic.name
 		var owner = this.owners[name] || new Owner(topic, this.allBrokers)
 		this.owners[name] = owner
-		owner.consume(partitionNames)
+		owner.consume(partitionNamesWithOffsets)
 	}
 
 	Consumer.prototype.stop = function (topic, partitionNames) {

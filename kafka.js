@@ -46,7 +46,6 @@ module.exports = function (
 
 	Kafka.prototype.defaultOptions = function (options) {
 		var defaults = {}
-		defaults.startOffset = options.startOffset || 0
 		defaults.queueTime = options.queueTime || 5000
 		defaults.batchSize = options.batchSize || 200
 		defaults.minFetchDelay = options.minFetchDelay || 0

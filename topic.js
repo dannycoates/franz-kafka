@@ -21,7 +21,7 @@ module.exports = function (
 	//   batchSize: number (count)
 	//   queueTime: number (ms)
 	//   partitions: {
-	//     consume: [string] (broker-partition) ex. '0-0'
+	//     consume: [string] (broker-partition:offset) ex. '0-0:123'
 	//     produce: [string] (broker:partitionCount) ex. '0:5'
 	//   }
 	// }

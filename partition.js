@@ -48,12 +48,12 @@ module.exports = function (logger) {
 		}
 	}
 
-	function Partition(topic, broker, id) {
+	function Partition(topic, broker, id, offset) {
 		this.topic = topic
 		this.broker = broker
 		this.id = id
 		this.fetchDelay = this.topic.minFetchDelay
-		this.emptyFetches = 0
+		this.emptyFetches = offset || 0
 		this.offset = 0
 		this.fetcher = fetch.bind(this)
 		this.fetchResponder = handleResponse.bind(this)

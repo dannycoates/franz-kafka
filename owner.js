@@ -8,17 +8,19 @@ module.exports = function (Partition) {
 		this.paused = true
 	}
 
-	Owner.prototype.consume = function (partitionNames) {
+	Owner.prototype.consume = function (partitionNamesWithOffsets) {
 		this.paused = false
-		for (var i = 0; i < partitionNames.length; i++) {
-			var name = partitionNames[i]
-			var split = name.split('-')
-			if (split.length === 2) {
-				var brokerId = +split[0]
-				var partitionNo = +split[1]
+		for (var i = 0; i < partitionNamesWithOffsets.length; i++) {
+			var nameAndOffset = partitionNamesWithOffsets[i].split(':')
+			var name = nameAndOffset[0]
+			var offset = +(nameAndOffset[1] || 0)
+			var brokerPartition = name.split('-')
+			if (brokerPartition.length === 2) {
+				var brokerId = +brokerPartition[0]
+				var partitionNo = +brokerPartition[1]
 				var broker = this.brokers.get(brokerId)
 				var partition = this.partitionsByName[name] ||
-					new Partition(this.topic, broker, partitionNo)
+					new Partition(this.topic, broker, partitionNo, offset)
 
 				this.partitionsByName[name] = partition
 				if(this.partitions.indexOf(partition) === -1) {
