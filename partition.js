@@ -23,7 +23,7 @@ module.exports = function (logger) {
 			this.bufferedMessages = messages
 		}
 		else {
-			this.topic.parseMessages(messages)
+			this.topic.parseMessages(this, messages)
 			this._setFetchDelay(length === 0)
 			this._loop()
 		}
@@ -87,9 +87,13 @@ module.exports = function (logger) {
 		}
 	}
 
+	Partition.prototype.name = function () {
+		return this.broker.id + '-' + this.id
+	}
+
 	Partition.prototype.flush = function () {
 		if (this.bufferedMessages) {
-			this.topic.parseMessages(this.bufferedMessages)
+			this.topic.parseMessages(this, this.bufferedMessages)
 			this.bufferedMessages = null
 		}
 	}

@@ -56,8 +56,9 @@ module.exports = function (
 	//emit end
 	//emit close
 
-	Topic.prototype.parseMessages = function(messages) {
+	Topic.prototype.parseMessages = function(partition, messages) {
 		var self = this
+		this.emit('offset', partition.name(), partition.offset)
 		for (var i = 0; i < messages.length; i++) {
 			messages[i].unpack(
 				function (payloads) {
