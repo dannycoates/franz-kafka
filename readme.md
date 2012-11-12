@@ -120,7 +120,7 @@ The maximum size of a fetched message. If a fetched message is larger than this
 size the Topic will emit an 'error' event.
 
 
-### kafka.connect
+### kafka.connect([onconnect])
 
 Connects to the Kafka cluster and runs the callback once connected.
 
@@ -131,7 +131,7 @@ kafka.connect(function () {
 })
 ```
 
-### kafka.topic
+### kafka.topic(name, [options])
 
 Get a Topic for consuming or producing. The first argument is the topic name and
 the second are the topic options.
