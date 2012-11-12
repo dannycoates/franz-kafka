@@ -120,7 +120,7 @@ The maximum size of a fetched message. If a fetched message is larger than this
 size the Topic will emit an 'error' event.
 
 
-### connect
+### kafka.connect
 
 Connects to the Kafka cluster and runs the callback once connected.
 
@@ -131,7 +131,7 @@ kafka.connect(function () {
 })
 ```
 
-### topic
+### kafka.topic
 
 Get a Topic for consuming or producing. The first argument is the topic name and
 the second are the topic options.
@@ -152,18 +152,18 @@ var foo = kafka.topic('foo', {
 })
 ```
 
-###### partitions
+##### partitions
 
 This structure describes which brokers and partitions the client will connect to
 for producing and consuming.
 
-####### consume
+###### consume
 
 An array of partitions to consume and what offset to begin consuming from in the
 form of 'brokerId-partitionId:startOffset'. For example broker 2 partition 3
 offset 5 is '2-3:5'
 
-####### produce
+###### produce
 
 An array of brokers to produce to with the count of partitions in the form of
 'brokerId:partitionCount'. For example broker 3 with 8 partitions is '3:8'
@@ -177,55 +177,85 @@ Fires when the client is connected to a broker.
 
 ## Topic
 
-A topic is a Stream that may be Readable for consuming and Writable for producing.
-Retrieve a topic from the kafka instance.
+A topic is a [Stream](http://nodejs.org/api/stream.html) that may be Readable for
+consuming and Writable for producing. Retrieve a topic from the kafka instance.
 
 ```js
 var topic = kafka.topic('a topic')
 ```
 
-### pause
+### topic.pause()
 
 Pause the consumer stream
 
-### resume
+### topic.resume()
 
 Resume the consumer stream
 
-### destroy
+### topic.destroy()
 
 Destroy the consumer stream
 
-### setEncoding
+### topic.setEncoding([encoding])
 
-Sets the encoding of the data emitted by the `data` event
+Sets the encoding of the data emitted by the `data` event.
 
-### write
+* `encoding` is one of:
+	'utf8', 'utf16le', 'ucs2', 'ascii', 'hex', or undefined for a raw Buffer
+
+### topic.write(data, [encoding])
 
 Write a message to the topic. Returns false if the message buffer is full.
 
-### end
+* `data` is a string or Buffer
+* `encoding` is optional when `data` is a string. Default is 'utf8'
+
+### topic.end(data, [encoding])
 
 Same as `write`
 
-### pipe
+### topic.pipe(destination, [options])
 
-Pipe the stream of messages to the next Writable Stream
+Pipe the stream of messages to the `destination` Writable Stream.
+See (Stream.pipe)[http://nodejs.org/api/stream.html#stream_stream_pipe_destination_options]
 
 ### events
 
 ###### data
 
 Fires for each message. Data is a Buffer by default or a string if `setEncoding`
-was called
+was called.
+
+```js
+topic.on('data', function (data) { console.log('message data: %s', data) })
+```
 
 ###### drain
 
 Fires when the producer stream can handle more messages
 
+```js
+topic.on('drain', function () { console.log('%s is ready to write', topic.name )})
+```
+
 ###### error
 
-Fires when there is a produce or consume error
+Fires when there is a produce or consume error. An Error object is emitted.
+
+```js
+topic.on('error', function (error) { console.error(error.message)})
+```
+
+###### offset
+
+Fires when a new offset is fetched. 'data' events emitted between 'offset' events
+all belong to the same offset in Kafka. The partition name and offset is emitted.
+
+```js
+topic.on('offset', function(partition, offset) {
+	console.log("topic: %s partition: %s offset: %d", topic.name, partition, offset)
+})
+```
 
 
 ---
