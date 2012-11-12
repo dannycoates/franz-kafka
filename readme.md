@@ -217,7 +217,7 @@ Same as `write`
 ### topic.pipe(destination, [options])
 
 Pipe the stream of messages to the `destination` Writable Stream.
-See (Stream.pipe)[http://nodejs.org/api/stream.html#stream_stream_pipe_destination_options]
+See [Stream.pipe](http://nodejs.org/api/stream.html#stream_stream_pipe_destination_options)
 
 ### events
 
