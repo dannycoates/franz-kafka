@@ -228,6 +228,25 @@ Fires when the producer stream can handle more messages
 Fires when there is a produce or consume error
 
 
+---
+
+## ZooKeeper
+
+ZooKeeper support is in development. Producer support is functional. Consumer support
+does not yet include partition balancing.
+
+To produce using ZooKeeper use the `zookeeper` option in the Kafka constructor.
+
+```js
+var kafka = new Kafka({
+	zookeeper: 'localhost:2181' // the host:port of zookeeper
+})
+
+kafka.connect(function () {
+	console.log('connected via zookeeper')
+})
+```
+
 # License
 
 BSD
