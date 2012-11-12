@@ -16,12 +16,14 @@ module.exports = function (
 		this.connection.on(
 			'connect',
 			function () {
+				self.ready = true
 				self.emit('connect')
 			}
 		)
 		this.connection.on(
 			'end',
 			function () {
+				self.ready = false
 				self.emit('end')
 				self.connection = null
 			}
@@ -36,7 +38,7 @@ module.exports = function (
 			}
 		)
 		this.id = id
-		this.ready = true
+		this.ready = false
 		this.readableSteam = new ReadableStream()
 		this.readableSteam.wrap(this.connection)
 		this.receiver = new Receiver(this.readableSteam)

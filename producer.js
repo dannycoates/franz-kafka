@@ -63,8 +63,7 @@ module.exports = function (
 	Producer.prototype.write = function (topic, messages, cb) {
 		var broker = this.brokerForTopic(topic.name)
 		if (broker) {
-			var ready = broker.write(topic, messages, cb) ||
-				this.topicBrokers[topic.name].areAnyReady()
+			var ready = broker.write(topic, messages, cb) || this.isReady(topic)
 			topic.setReady(ready)
 			return ready
 		}
@@ -74,6 +73,10 @@ module.exports = function (
 		// before the broker-partition assignments arrive
 		this.allBrokers.randomReady().write(topic, messages, cb)
 		return true
+	}
+
+	Producer.prototype.isReady = function (topic) {
+		return this.topicBrokers[topic.name].areAnyReady()
 	}
 
 	return Producer

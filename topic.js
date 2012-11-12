@@ -136,6 +136,7 @@ module.exports = function (
 
 	Topic.prototype.setReady = function (ready) {
 		if(ready && !this.ready) {
+			this.outgoingMessages.flush()
 			this.emit('drain')
 		}
 		this.ready = ready

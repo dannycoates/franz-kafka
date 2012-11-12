@@ -60,7 +60,7 @@ var Kafka = require('franz-kafka')
 
 var kafka = new Kafka({
 	brokers: [{              // an array of broker connection info
-		id: 0                  // the server's broker id
+		id: 0,               // the server's broker id
 		host: 'localhost',
 		port: 9092
 	}],
@@ -146,8 +146,8 @@ var foo = kafka.topic('foo', {
 	batchSize: 200,        // defaults to the kafka.batchSize
 	queueTime: 5000,       // defaults to the kafka.queueTime
 	partitions: {
-		consume: ['0-0:0']   // array of strings with the form 'brokerId-partitionId:startOffset'
-		produce: ['0:1']     // array of strings with the form 'brokerId:partitionCount'
+		consume: ['0-0:0'] // array of strings with the form 'brokerId-partitionId:startOffset'
+		produce: ['0:1']   // array of strings with the form 'brokerId:partitionCount'
 	}
 })
 ```

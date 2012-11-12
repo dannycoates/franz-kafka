@@ -7,8 +7,15 @@ module.exports = function () {
 	}
 
 	function send() {
-		var sent = this.producer.write(this.topic, this.messages, this.produceResponder)
-		this.reset()
+		var sent = false
+		if (this.producer.isReady(this.topic)) {
+			sent = this.producer.write(
+				this.topic,
+				this.messages,
+				this.produceResponder
+			)
+			this.reset()
+		}
 		return sent
 	}
 
@@ -34,10 +41,16 @@ module.exports = function () {
 		if (!this.timer) {
 			this.timer = setTimeout(this.send, this.queueTime)
 		}
-		if (this.messages.push(message) === this.batchSize) {
+		if (this.messages.push(message) >= this.batchSize) {
 			return this.send()
 		}
 		return true
+	}
+
+	MessageBuffer.prototype.flush = function () {
+		if (this.messages.length > 0) {
+			this.send()
+		}
 	}
 
 	return MessageBuffer
