@@ -279,4 +279,4 @@ kafka.connect(function () {
 
 # License
 
-BSD
+MIT
