@@ -3,7 +3,7 @@ module.exports = function (logger) {
 
 	function exponentialBackoff(attempt, delay) {
 		return Math.floor(
-			Math.random() * Math.pow(2, attempt) * (Math.max(delay, 1))
+			Math.random() * Math.pow(2, attempt) * 10 + delay
 		)
 	}
 
@@ -30,21 +30,17 @@ module.exports = function (logger) {
 	}
 
 	function fetch() {
-		if (!this.pending) {
+		if (this.broker.isReady()) {
 			this.broker.fetch(
 				this.topic.name,
 				this,
 				this.topic.maxFetchSize,
 				this.fetchResponder
 			)
-			this.pending = true
 		}
 		else {
-			logger.warn(
-				'pending', this.topic.name,
-				'broker', this.broker.id,
-				'partition', this.id
-			)
+			this._setFetchDelay(true)
+			this._loop()
 		}
 	}
 
@@ -60,7 +56,6 @@ module.exports = function (logger) {
 		this.paused = true
 		this.bufferedMessages = null
 		this.timer = null
-		this.pending = false
 	}
 
 	Partition.prototype._setFetchDelay = function (shouldDelay) {

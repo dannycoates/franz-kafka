@@ -9,6 +9,7 @@ module.exports = function () {
 	function send() {
 		var sent = false
 		if (this.producer.isReady(this.topic)) {
+			// TODO: slice messages into batchSize chunks if > batchSize
 			sent = this.producer.write(
 				this.topic,
 				this.messages,

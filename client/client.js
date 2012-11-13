@@ -16,6 +16,10 @@ module.exports = function (
 		this.connection.on(
 			'connect',
 			function () {
+				logger.info('client connect')
+				self.readableSteam = new ReadableStream()
+				self.readableSteam.wrap(self.connection)
+				self.receiver = new Receiver(self.readableSteam)
 				self.ready = true
 				self.emit('connect')
 			}
@@ -23,6 +27,7 @@ module.exports = function (
 		this.connection.on(
 			'end',
 			function () {
+				logger.info('client end')
 				self.ready = false
 				self.emit('end')
 				self.connection = null
@@ -37,11 +42,23 @@ module.exports = function (
 				}
 			}
 		)
+		this.connection.on(
+			'error',
+			function (err) {
+				//logger.info('client error', err)
+			}
+		)
+		this.connection.on(
+			'close',
+			function (hadError) {
+				logger.info('client closed with error:', hadError)
+				self.emit('end')
+			}
+		)
 		this.id = id
 		this.ready = false
-		this.readableSteam = new ReadableStream()
-		this.readableSteam.wrap(this.connection)
-		this.receiver = new Receiver(this.readableSteam)
+		this.readableSteam = null
+		this.receiver = null
 		EventEmitter.call(this)
 	}
 	inherits(Client, EventEmitter)
@@ -65,6 +82,7 @@ module.exports = function (
 			this.connection,
 			function (err, written) {
 				if (err) {
+					this.ready = false
 					return cb(err)
 				}
 				if (!written) {

@@ -19,6 +19,7 @@ module.exports = function (
 		this.id = id
 		this.topicPartitions = {}
 		this.client = null
+		this.reconnectAttempts = 0
 		options = options || {}
 		options.host = host
 		options.port = port
@@ -27,38 +28,49 @@ module.exports = function (
 	}
 	inherits(Broker, EventEmitter)
 
+	function exponentialBackoff(attempt) {
+		return Math.floor(
+			Math.random() * Math.pow(2, attempt) * 10
+		)
+	}
+
 	Broker.prototype.connect = function (options) {
 		var self = this
-		if (!this.client) {
-			logger.info(
-				'connecting broker', self.id,
-				'host', options.host,
-				'port', options.port
-			)
-			this.client = new Client(this.id, options)
-			this.client.once(
-				'connect',
-				function () {
-					logger.info('broker connected', self.id)
-					self.emit('connect')
-				}
-			)
-			this.client.once(
-				'end',
-				function () {
-					//TODO: smarter reconnect
-					logger.info('broker ended', self.id)
-					self.connect()
-				}
-			)
-			this.client.on(
-				'ready',
-				function () {
-					logger.info('broker ready', self.id)
-					self.emit('ready')
-				}
-			)
-		}
+		logger.info(
+			'connecting broker', self.id,
+			'host', options.host,
+			'port', options.port
+		)
+		this.client = new Client(this.id, options)
+		this.client.once(
+			'connect',
+			function () {
+				logger.info('broker connected', self.id)
+				self.reconnectAttempts = 0
+				self.emit('connect')
+
+			}
+		)
+		this.client.once(
+			'end',
+			function () {
+				self.reconnectAttempts++
+				logger.info('broker ended', self.id, self.reconnectAttempts)
+				setTimeout(
+					function () {
+						self.connect(options)
+					},
+					exponentialBackoff(self.reconnectAttempts)
+				)
+			}
+		)
+		this.client.on(
+			'ready',
+			function () {
+				logger.info('broker ready', self.id)
+				self.emit('ready')
+			}
+		)
 	}
 
 	Broker.prototype.isReady = function () {
