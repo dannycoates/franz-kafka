@@ -1,4 +1,5 @@
 module.exports = function (
+	logger,
 	inherits,
 	EventEmitter,
 	State) {
@@ -15,7 +16,22 @@ module.exports = function (
 		this.stream.on(
 			'end',
 			function () {
+				logger.info(
+					'receiver', 'ended',
+					'queue', self.queue.length
+				)
+				while (self.queue.length > 0) {
+					self.current.abort()
+					self.next()
+				}
+				self.current.abort()
 				self.closed = true
+			}
+		)
+		this.stream.on(
+			'error',
+			function (err) {
+				logger.info('receiver error', err.message)
 			}
 		)
 		this.queue = []
@@ -60,7 +76,10 @@ module.exports = function (
 	}
 
 	Receiver.prototype.push = function (request, cb) {
-		if (this.closed) { return false } // or something
+		if (this.closed) {
+			cb(new Error('receiver closed'))
+			return false
+		}
 		var response = request.response(cb)
 		if (response !== State.nil) {
 			this.queue.push(response)

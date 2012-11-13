@@ -38,5 +38,10 @@ module.exports = function (
 		return this.done
 	}
 
+	Response.prototype.abort = function () {
+		this.done = true
+		this.cb(new Error('Response aborted'))
+	}
+
 	return Response
 }

@@ -37,5 +37,7 @@ module.exports = function (inherits) {
 
 	State.prototype.error = function () { return null }
 
+	State.prototype.abort = function () {}
+
 	return State
 }

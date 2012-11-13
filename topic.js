@@ -107,6 +107,7 @@ module.exports = function (
 		if (!this.paused) {
 			this.pause()
 		}
+		logger.info('topic', this.name, 'error', err.message)
 		this.emit('error', err)
 	}
 

@@ -33,7 +33,6 @@ file.once('open', function () {
 		baz.resume()
 
 		baz.on('error', function (err) {
-			console.error(err.message)
 			switch(err.name) {
 				case 'Produce Error':
 					this.maxMessageSize = err.length
