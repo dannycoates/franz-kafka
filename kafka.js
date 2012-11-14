@@ -17,11 +17,13 @@ module.exports = function (
 	//   maxMessageSize: -1
 	//   queueTime: 5000
 	//   batchSize: 200
+	//   groupId: 'franz-kafka'
 	// }
 	//
 	function Kafka(options) {
 		this.topics = {}
 		this.options = options || {}
+		this.options.groupId = this.options.groupId || 'franz-kafka'
 		this.connector = null
 		this.topicDefaults = this.defaultOptions(options)
 		EventEmitter.call(this)
@@ -109,13 +111,12 @@ module.exports = function (
 	//
 	// }
 	Kafka.prototype.topic = function (name, options) {
-		options = setTopicOptions(options, this.topicDefaults)
 		var topic = this.topics[name] ||
 			new Topic(
 				name,
 				this.connector.producer,
 				this.connector.consumer,
-				options
+				setTopicOptions(options, this.topicDefaults)
 			)
 		this.topics[name] = topic
 		return topic

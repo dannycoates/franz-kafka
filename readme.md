@@ -72,6 +72,7 @@ var kafka = new Kafka({
 	batchSize: 200,          // number of messages to bundle before producing
 
 	// consumer defaults
+	groupId: 'franz-kafka',  // the consumer group name this instance is part of
 	minFetchDelay: 0,        // minimum milliseconds to wait between fetches
 	maxFetchDelay: 10000,    // maximum milliseconds to wait between fetches
 	maxFetchSize: 300*1024,  // limits the size of a fetched message
