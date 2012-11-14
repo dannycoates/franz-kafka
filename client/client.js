@@ -94,21 +94,13 @@ module.exports = function (
 	}
 
 	// cb: function (err, length, messages) {}
-	Client.prototype.fetch = function (name, partition, maxSize, cb) {
+	Client.prototype.fetch = function (topic, partition, cb) {
 		logger.info(
-			'fetching', name,
+			'fetching', topic.name,
 			'broker', this.id,
 			'partition', partition.id
 		)
-		return this._send(
-			new FetchRequest(
-				name,
-				partition.offset,
-				partition.id,
-				maxSize
-			),
-			cb
-		)
+		return this._send(new FetchRequest(topic, partition), cb)
 	}
 
 	// topic: a Topic object
@@ -123,22 +115,22 @@ module.exports = function (
 		)
 		return this._send(
 			new ProduceRequest(
-				topic.name,
-				messages.map(Message.create),
+				topic,
 				partitionId,
-				topic.compression,
-				topic.maxMessageSize
+				messages.map(Message.create)
 			),
 			cb
 		)
 	}
 
-	Client.prototype.offsets = function (time, maxCount, cb) {
+	Client.prototype.offsets = function (topic, partition, time, maxCount, cb) {
 		logger.info(
 			'offsets', time,
-			'broker', this.id
+			'topic', topic.name,
+			'broker', this.id,
+			'partition', partition.id
 		)
-		return this._send(new OffsetsRequest(time, maxCount), cb)
+		return this._send(new OffsetsRequest(topic, partition, time, maxCount), cb)
 	}
 
 	Client.compression = Message.compression

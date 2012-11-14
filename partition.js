@@ -32,9 +32,8 @@ module.exports = function (logger) {
 	function fetch() {
 		if (this.broker.isReady()) {
 			this.broker.fetch(
-				this.topic.name,
+				this.topic,
 				this,
-				this.topic.maxFetchSize,
 				this.fetchResponder
 			)
 		}

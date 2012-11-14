@@ -93,8 +93,8 @@ module.exports = function (
 		this.topicPartitions = {}
 	}
 
-	Broker.prototype.fetch = function (name, partition, maxSize, cb) {
-		this.client.fetch(name, partition, maxSize, cb)
+	Broker.prototype.fetch = function (topic, partition, cb) {
+		this.client.fetch(topic, partition, cb)
 	}
 
 	Broker.prototype.write = function (topic, messages, cb) {

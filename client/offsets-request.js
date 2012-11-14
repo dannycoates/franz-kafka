@@ -4,7 +4,9 @@ module.exports = function (
 	OffsetsBody,
 	int53) {
 
-	function OffsetsRequest(time, maxCount) {
+	function OffsetsRequest(topic, partition, time, maxCount) {
+		this.topic = topic
+		this.partition = partition
 		this.time = time
 		this.maxCount = maxCount
 	}
@@ -34,7 +36,9 @@ module.exports = function (
 		var header = new RequestHeader(
 			payload.length,
 			RequestHeader.types.OFFSETS,
-			"test")
+			this.topic.name,
+			this.partition.id
+		)
 		try {
 			header.serialize(stream)
 			var written = stream.write(payload)

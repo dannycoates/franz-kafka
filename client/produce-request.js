@@ -12,12 +12,10 @@ module.exports = function (
 	inherits(ProduceError, Error)
 	ProduceError.prototype.name = 'Produce Error'
 
-	function ProduceRequest(topic, messages, partitionId, compression, maxSize) {
-		this.topic = topic || ""
-		this.messages = messages || []
+	function ProduceRequest(topic, partitionId, messages) {
+		this.topic = topic
 		this.partitionId = partitionId
-		this.compression = compression
-		this.maxSize = maxSize
+		this.messages = messages || []
 	}
 
 	function messageToBuffer(m) { return m.toBuffer() }
@@ -30,7 +28,7 @@ module.exports = function (
 		var wrapper = new Message()
 		wrapper.setData(
 			Buffer.concat(messageBuffers, messagesLength),
-			this.compression,
+			this.topic.compression,
 			function (err) {
 				cb(err, wrapper.toBuffer())
 			}
@@ -59,13 +57,13 @@ module.exports = function (
 		if (err) {
 			return cb(err)
 		}
-		if (buffer.length > this.maxSize) {
+		if (buffer.length > this.topic.maxMessageSize) {
 			return cb(new ProduceError("message too big", buffer.length))
 		}
 		var header = new RequestHeader(
 			buffer.length + 4,
 			RequestHeader.types.PRODUCE,
-			this.topic,
+			this.topic.name,
 			this.partitionId
 		)
 		try {
