@@ -6,15 +6,33 @@ module.exports = function () {
 		}
 	}
 
+	function batchify(messages, size) {
+		if(messages.length <= size) {
+			return [messages]
+		}
+		return messages.reduce(
+			function (group, message, index) {
+				var x = Math.floor(index / size)
+				var bucket = group[x] || []
+				bucket.push(message)
+				group[x] = bucket
+				return group
+			},
+			[]
+		)
+	}
+
 	function send() {
 		var sent = false
 		if (this.producer.isReady(this.topic)) {
-			// TODO: slice messages into batchSize chunks if > batchSize
-			sent = this.producer.write(
-				this.topic,
-				this.messages,
-				this.produceResponder
-			)
+			var batches = batchify(this.messages, this.batchSize)
+			for (var i = 0; i < batches.length; i++) {
+				sent = this.producer.write(
+					this.topic,
+					batches[i],
+					this.produceResponder
+				)
+			}
 			this.reset()
 		}
 		return sent
