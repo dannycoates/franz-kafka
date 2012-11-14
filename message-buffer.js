@@ -39,7 +39,6 @@ module.exports = function () {
 	}
 
 	function MessageBuffer(topic, batchSize, queueTime, producer) {
-		var self = this
 		this.topic = topic
 		this.batchSize = batchSize
 		this.queueTime = queueTime

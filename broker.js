@@ -35,9 +35,8 @@ module.exports = function (
 	}
 
 	Broker.prototype.connect = function (options) {
-		var self = this
 		logger.info(
-			'connecting broker', self.id,
+			'connecting broker', this.id,
 			'host', options.host,
 			'port', options.port
 		)
@@ -45,31 +44,30 @@ module.exports = function (
 		this.client.once(
 			'connect',
 			function () {
-				logger.info('broker connected', self.id)
-				self.reconnectAttempts = 0
-				self.emit('connect')
-
-			}
+				logger.info('broker connected', this.id)
+				this.reconnectAttempts = 0
+				this.emit('connect', this)
+			}.bind(this)
 		)
 		this.client.once(
 			'end',
 			function () {
-				self.reconnectAttempts++
-				logger.info('broker ended', self.id, self.reconnectAttempts)
+				this.reconnectAttempts++
+				logger.info('broker ended', this.id, this.reconnectAttempts)
 				setTimeout(
 					function () {
-						self.connect(options)
+						this.connect(options)
 					},
-					exponentialBackoff(self.reconnectAttempts)
+					exponentialBackoff(this.reconnectAttempts)
 				)
-			}
+			}.bind(this)
 		)
 		this.client.on(
 			'ready',
 			function () {
-				logger.info('broker ready', self.id)
-				self.emit('ready')
-			}
+				logger.info('broker ready', this.id)
+				this.emit('ready', this)
+			}.bind(this)
 		)
 	}
 

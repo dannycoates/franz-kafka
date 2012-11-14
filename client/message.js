@@ -48,21 +48,11 @@ module.exports = function (
 
 	Message.prototype.getData = function (cb) {
 		if (this.magic && this.compression) {
-			var self = this
-			function uncompressed(err, data) {
-				if (err) {
-					return cb(err)
-				}
-				self.payload = data
-				self.checksum = crc32.unsigned(data)
-				self.compression = Message.compression.NONE
-				cb(null, data)
-			}
 			if (this.compression === Message.compression.GZIP) {
-				zlib.gunzip(this.payload, uncompressed)
+				zlib.gunzip(this.payload, afterUncompress.bind(this, cb))
 			}
 			else if (this.compression === Message.compression.SNAPPY) {
-				snappy.uncompress(this.payload, uncompressed)
+				snappy.uncompress(this.payload, afterUncompress.bind(this, cb))
 			}
 			else {
 				cb(new Error("Unknown compression " + this.compression))
@@ -71,6 +61,16 @@ module.exports = function (
 		else {
 			cb(null, this.payload)
 		}
+	}
+
+	function afterUncompress(cb, err, data) {
+		if (err) {
+			return cb(err)
+		}
+		this.payload = data
+		this.checksum = crc32.unsigned(data)
+		this.compression = Message.compression.NONE
+		cb(null, data)
 	}
 
 	function compress(buffer, method, cb) {
@@ -86,21 +86,20 @@ module.exports = function (
 		}
 	}
 
+	function afterCompress(cb, err, compressed) {
+		if (err) {
+			return cb(err)
+		}
+		this.payload = compressed
+		this.checksum = crc32.unsigned(compressed)
+		return cb(null, this)
+	}
+
 	Message.prototype.setData = function (buffer, compression, cb) {
-		var self = this
 		if (compression) {
 			this.magic = 1
 			this.compression = compression
-			compress(buffer, compression,
-				function (err, compressed) {
-					if (err) {
-						return cb(err)
-					}
-					self.payload = compressed
-					self.checksum = crc32.unsigned(compressed)
-					return cb(null, self)
-				}
-			)
+			compress(buffer, compression, afterCompress.bind(this, cb))
 		}
 		else {
 			this.magic = 1

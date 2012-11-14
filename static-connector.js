@@ -18,37 +18,37 @@ module.exports = function (
 	//   ]
 	// }
 	function StaticConnector(options) {
-		var self = this
 		this.options = options
 		this.allBrokers = new BrokerPool('all')
 		this.producer = new Producer(this.allBrokers)
 		this.consumer = new Consumer(this, options.groupId, this.allBrokers)
+		this.onBrokerConnect = addBroker.bind(this)
+		this.onBrokerReady = brokerReady.bind(this)
 
-		this.allBrokers.once('brokerAdded',
+		this.allBrokers.once(
+			'brokerAdded',
 			function (broker) {
-				self.emit('brokerAdded', broker)
-			}
+				this.emit('brokerAdded', broker)
+			}.bind(this)
 		)
 
-		this.options.brokers.forEach(
-			function (b) {
-				var broker = new Broker(b.id, b.host, b.port, this.options)
-				broker.once(
-					'connect',
-					function () {
-						self.allBrokers.add(broker)
-					}
-				)
-				broker.on('ready',
-					function () {
-						self.emit('brokerReady', this)
-					}
-				)
-			}
-		)
+		for (var i = 0; i < this.options.brokers.length; i++) {
+			var b = this.options.brokers[i]
+			var broker = new Broker(b.id, b.host, b.port, this.options)
+			broker.once('connect', this.onBrokerConnect)
+			broker.on('ready', this.onBrokerReady)
+		}
 		EventEmitter.call(this)
 	}
 	inherits(StaticConnector, EventEmitter)
+
+	function addBroker(broker) {
+		this.allBrokers.add(broker)
+	}
+
+	function brokerReady(broker) {
+		this.emit('brokerReady', broker)
+	}
 
 	StaticConnector.prototype.consume = function (topic, partitions) {
 		logger.assert(partitions)

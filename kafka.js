@@ -62,7 +62,6 @@ module.exports = function (
 	//
 	// onconnect: function () {}
 	Kafka.prototype.connect = function (onconnect) {
-		var self = this
 		if (this.options.zookeeper) {
 			this.connector = new ZKConnector(this.options)
 		}
@@ -72,20 +71,20 @@ module.exports = function (
 		this.connector.once(
 			'brokerAdded', // TODO: create a more definitive event in the connectors
 			function () {
-				self.emit('connect')
-			}
+				this.emit('connect')
+			}.bind(this)
 		)
 		this.connector.on(
 			'brokerReady',
 			function (b) {
-				var topics = Object.keys(self.topics)
+				var topics = Object.keys(this.topics)
 				for (var i = 0; i < topics.length; i++) {
 					var name = topics[i]
 					if (b.hasTopic(name)) {
-						self.topics[name].setReady(true)
+						this.topics[name].setReady(true)
 					}
 				}
-			}
+			}.bind(this)
 		)
 		if (typeof(onconnect) === 'function') {
 			this.once('connect', onconnect)

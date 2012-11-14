@@ -5,28 +5,27 @@ module.exports = function (
 	State) {
 
 	function Receiver(stream) {
-		var self = this
 		this.stream = stream
 		this.stream.on(
 			'readable',
 			function () {
-				self.read()
-			}
+				this.read()
+			}.bind(this)
 		)
 		this.stream.on(
 			'end',
 			function () {
 				logger.info(
 					'receiver', 'ended',
-					'queue', self.queue.length
+					'queue', this.queue.length
 				)
-				while (self.queue.length > 0) {
-					self.current.abort()
-					self.next()
+				while (this.queue.length > 0) {
+					this.current.abort()
+					this.next()
 				}
-				self.current.abort()
-				self.closed = true
-			}
+				this.current.abort()
+				this.closed = true
+			}.bind(this)
 		)
 		this.stream.on(
 			'error',

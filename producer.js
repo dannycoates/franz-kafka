@@ -4,7 +4,6 @@ module.exports = function (
 	BrokerPool) {
 
 	function Producer(allBrokers) {
-		var self = this
 		this.allBrokers = allBrokers
 		this.topicBrokers = {}
 		EventEmitter.call(this)
@@ -12,23 +11,21 @@ module.exports = function (
 	inherits(Producer, EventEmitter)
 
 	Producer.prototype._remove = function (broker) {
-		var self = this
-		Object.keys(this.topicBrokers).forEach(
-			function (name) {
-				self.topicBrokers[name].remove(broker)
-			}
-		)
+		var names = Object.keys(this.topicBrokers)
+		for (var i = 0; i < names.length; i++) {
+			var name = names[i]
+			this.topicBrokers[name].remove(broker)
+		}
 	}
 
 	Producer.prototype.removeBrokersNotIn = function (ids) {
-		var self = this
-		this.allBrokers.all().forEach(
-			function (b) {
-				if (ids.indexOf(b.id) < 0) {
-					self._remove(b)
-				}
+		var brokers = this.allBrokers.all()
+		for (var i = 0; i < brokers.length; i++) {
+			var b = brokers[i]
+			if (ids.indexOf(b.id) < 0) {
+				this._remove(b)
 			}
-		)
+		}
 	}
 
 	Producer.prototype.addPartitions = function (topicName, partitionNames) {

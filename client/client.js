@@ -11,36 +11,35 @@ module.exports = function (
 	OffsetsRequest
 ) {
 	function Client(id, options) {
-		var self = this
 		this.connection = net.connect(options)
 		this.connection.on(
 			'connect',
 			function () {
 				logger.info('client connect')
-				self.readableSteam = new ReadableStream()
-				self.readableSteam.wrap(self.connection)
-				self.receiver = new Receiver(self.readableSteam)
-				self.ready = true
-				self.emit('connect')
-			}
+				this.readableSteam = new ReadableStream()
+				this.readableSteam.wrap(this.connection)
+				this.receiver = new Receiver(this.readableSteam)
+				this.ready = true
+				this.emit('connect')
+			}.bind(this)
 		)
 		this.connection.on(
 			'end',
 			function () {
 				logger.info('client end')
-				self.ready = false
-				self.emit('end')
-				self.connection = null
-			}
+				this.ready = false
+				this.emit('end')
+				this.connection = null
+			}.bind(this)
 		)
 		this.connection.on(
 			'drain',
 			function () {
-				if (!self.ready) { //TODO: why is connection.drain so frequent?
-					self.ready = true
-					self.emit('ready')
+				if (!this.ready) { //TODO: why is connection.drain so frequent?
+					this.ready = true
+					this.emit('ready')
 				}
-			}
+			}.bind(this)
 		)
 		this.connection.on(
 			'error',
@@ -52,8 +51,8 @@ module.exports = function (
 			'close',
 			function (hadError) {
 				logger.info('client closed with error:', hadError)
-				self.emit('end')
-			}
+				this.emit('end')
+			}.bind(this)
 		)
 		this.id = id
 		this.ready = false
@@ -64,34 +63,34 @@ module.exports = function (
 	inherits(Client, EventEmitter)
 
 	Client.prototype.drain = function (cb) {
-		var self = this
 		logger.info('draining', this.id)
 		this.receiver.close(
 			function () {
-				logger.info('drained', self.id)
+				logger.info('drained', this.id)
 				// XXX is reopening correct here?
-				self.receiver.open()
+				this.receiver.open()
 				cb()
-			}
+			}.bind(this)
 		)
 	}
 
 	Client.prototype._send = function (request, cb) {
-		var self = this
 		request.serialize(
 			this.connection,
-			function (err, written) {
-				if (err) {
-					this.ready = false
-					return cb(err)
-				}
-				if (!written) {
-					self.ready = false
-				}
-				self.receiver.push(request, cb)
-			}
+			afterSend.bind(this, cb, request)
 		)
 		return this.ready
+	}
+
+	function afterSend(cb, request, err, written) {
+		if (err) {
+			this.ready = false
+			return cb(err)
+		}
+		if (!written) {
+			this.ready = false
+		}
+		this.receiver.push(request, cb)
 	}
 
 	// cb: function (err, length, messages) {}

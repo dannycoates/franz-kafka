@@ -52,33 +52,33 @@ module.exports = function (
 	// MESSAGES_LENGTH = int32 // Length in bytes of the MESSAGES section
 	// MESSAGES = Collection of MESSAGES
 	ProduceRequest.prototype.serialize = function (stream, cb) {
-		var self = this
-		var payload
-		this._compress(
-			function (err, buffer) {
-				var err = null
-				if (buffer.length > self.maxSize) {
-					return cb(new ProduceError("message too big", buffer.length))
-				}
-				var header = new RequestHeader(
-					buffer.length + 4,
-					RequestHeader.types.PRODUCE,
-					self.topic,
-					self.partitionId
-				)
-				try {
-					header.serialize(stream)
-					var mlen = new Buffer(4)
-					mlen.writeUInt32BE(buffer.length, 0)
-					stream.write(mlen)
-					var written = stream.write(buffer)
-				}
-				catch (e) {
-					err = e
-				}
-				cb(err, written)
-			}
+		this._compress(writeRequest.bind(this, stream, cb))
+	}
+
+	function writeRequest(stream, cb, err, buffer) {
+		if (err) {
+			return cb(err)
+		}
+		if (buffer.length > this.maxSize) {
+			return cb(new ProduceError("message too big", buffer.length))
+		}
+		var header = new RequestHeader(
+			buffer.length + 4,
+			RequestHeader.types.PRODUCE,
+			this.topic,
+			this.partitionId
 		)
+		try {
+			header.serialize(stream)
+			var mlen = new Buffer(4)
+			mlen.writeUInt32BE(buffer.length, 0)
+			stream.write(mlen)
+			var written = stream.write(buffer)
+		}
+		catch (e) {
+			err = e
+		}
+		cb(err, written)
 	}
 
 	ProduceRequest.prototype.response = function (cb) {

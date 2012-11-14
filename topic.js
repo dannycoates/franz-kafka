@@ -49,6 +49,7 @@ module.exports = function (
 			this.producer
 		)
 		this.bufferedMessages = []
+		this.emitMessages = emitMessages.bind(this)
 		Stream.call(this)
 	}
 	inherits(Topic, Stream)
@@ -56,31 +57,29 @@ module.exports = function (
 	//emit end
 	//emit close
 
+	function emitMessages(payloads) {
+		for (var i = 0; i < payloads.length; i++) {
+			var data = payloads[i]
+			if (this.encoding) {
+				data = data.toString(this.encoding)
+			}
+			if (this.paused) {
+				logger.info(
+					'buffering', this.name,
+					'length', this.bufferedMessages.length
+				)
+				this.bufferedMessages.push(data)
+			}
+			else {
+				this.emit('data', data)
+			}
+		}
+	}
+
 	Topic.prototype.parseMessages = function(partition, messages) {
-		var self = this
 		this.emit('offset', partition.name(), partition.offset)
 		for (var i = 0; i < messages.length; i++) {
-			messages[i].unpack(
-				function (payloads) {
-					payloads.forEach(
-						function (data) {
-							if (self.encoding) {
-								data = data.toString(self.encoding)
-							}
-							if (self.paused) {
-								logger.info(
-									'buffering', self.name,
-									'length', self.bufferedMessages.length
-								)
-								self.bufferedMessages.push(data)
-							}
-							else {
-								self.emit('data', data)
-							}
-						}
-					)
-				}
-			)
+			messages[i].unpack(this.emitMessages)
 		}
 	}
 
