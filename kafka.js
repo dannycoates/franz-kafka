@@ -1,6 +1,8 @@
 module.exports = function (
 	inherits,
 	EventEmitter,
+	os,
+	BrokerPool,
 	Topic,
 	ZKConnector,
 	StaticConnector,
@@ -23,12 +25,18 @@ module.exports = function (
 	function Kafka(options) {
 		this.topics = {}
 		this.options = options || {}
-		this.options.groupId = this.options.groupId || 'franz-kafka'
 		this.connector = null
+		this.groupId = this.options.groupId || 'franz-kafka'
+		this.consumerId = genConsumerId(this.groupId)
+		this.allBrokers = new BrokerPool('all')
 		this.topicDefaults = this.defaultOptions(options)
 		EventEmitter.call(this)
 	}
 	inherits(Kafka, EventEmitter)
+
+	function genConsumerId(groupId) {
+		return groupId + '_' + os.hostname() + '-' + Date.now() + '-' + "DEADBEEF"
+	}
 
 	function setCompression(string) {
 		var compression
@@ -70,7 +78,7 @@ module.exports = function (
 		else if (this.options.brokers) {
 			this.connector = new StaticConnector(this.options)
 		}
-		this.connector.once(
+		this.allBrokers.once(
 			'brokerAdded', // TODO: create a more definitive event in the connectors
 			function () {
 				this.emit('connect')
@@ -114,12 +122,25 @@ module.exports = function (
 		var topic = this.topics[name] ||
 			new Topic(
 				name,
-				this.connector.producer,
-				this.connector.consumer,
+				this,
 				setTopicOptions(options, this.topicDefaults)
 			)
 		this.topics[name] = topic
 		return topic
+	}
+
+	Kafka.prototype.broker = function (id) {
+		return this.allBrokers.get(id)
+	}
+
+	Kafka.prototype.addBroker = function (broker) {
+		broker.on('ready', function () { /* TODO */})
+		this.allBrokers.add(broker)
+	}
+
+	Kafka.prototype.removeBroker = function (broker) {
+		broker.removeListener(/* TODO */)
+		this.allBrokers.remove(broker)
 	}
 
 	return Kafka

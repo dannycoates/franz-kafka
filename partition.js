@@ -1,4 +1,4 @@
-module.exports = function (logger) {
+module.exports = function (logger, inherits, EventEmitter, Broker) {
 
 
 	function exponentialBackoff(attempt, delay) {
@@ -30,7 +30,7 @@ module.exports = function (logger) {
 	}
 
 	function fetch() {
-		if (this.broker.isReady()) {
+		if (this.isReady()) {
 			this.broker.fetch(
 				this.topic,
 				this,
@@ -43,6 +43,7 @@ module.exports = function (logger) {
 		}
 	}
 
+	// TODO consider Partition as an EventEmitter with no reference to topic
 	function Partition(topic, broker, id, offset) {
 		this.topic = topic
 		this.broker = broker
@@ -55,7 +56,17 @@ module.exports = function (logger) {
 		this.paused = true
 		this.bufferedMessages = null
 		this.timer = null
+		// TODO: readable and writable determine whether this partition
+		// can be used for consuming or producing.
+		// I think writable might always be true, but readable is determined
+		// by the "connector" (as it exists now).
+		// I'm trying to factor out the connector in favor of a "controller"
+		// that does partition and broker management
+		this.readable = null
+		this.writable = null
+		EventEmitter.call(this)
 	}
+	inherits(Partition, EventEmitter)
 
 	Partition.prototype._setFetchDelay = function (shouldDelay) {
 		this.emptyFetches = shouldDelay ? this.emptyFetches + 1 : 0
@@ -121,6 +132,32 @@ module.exports = function (logger) {
 	Partition.prototype.saveOffset = function (saver) {
 		saver.saveOffset(this)
 	}
+
+	Partition.prototype.write = function (messages, cb) {
+		return this.broker.write(this, messages, cb)
+	}
+
+	Partition.prototype.isReady = function () {
+		return this.broker.isReady()
+	}
+
+	Partition.prototype.isWritable = function (writable) {
+		if (writable !== undefined && this.writable !== writable) {
+			this.writable = writable
+			this.emit('writable', this)
+		}
+		return this.writable
+	}
+
+	Partition.prototype.isReadable = function (readable) {
+		if (readable !== undefined && this.readable !== readable) {
+			this.readable = readable
+			this.emit('readable', this)
+		}
+		return this.readable
+	}
+
+	Partition.nil = new Partition({ minFetchDelay: 0 }, Broker.nil, -1)
 
 	return Partition
 }

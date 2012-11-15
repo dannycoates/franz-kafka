@@ -2,7 +2,9 @@ module.exports = function (
 	logger,
 	inherits,
 	Stream,
-	MessageBuffer) {
+	MessageBuffer,
+	Partition,
+	PartitionSet) {
 
 	// A Topic is Readable/Writable Stream.
 	// It's the main interaction point of the API.
@@ -11,8 +13,7 @@ module.exports = function (
 	// API API API
 	//
 	// name: string
-	// producer: Producer
-	// consumer: Consumer
+	// kafka: Kafka
 	// options: {
 	//   minFetchDelay: number (ms)
 	//   maxFetchDelay: number (ms)
@@ -25,28 +26,33 @@ module.exports = function (
 	//     produce: [string] (broker:partitionCount) ex. '0:5'
 	//   }
 	// }
-	function Topic(name, producer, consumer, options) {
+	function Topic(name, kafka, options) {
 		this.name = name || ''
 		this.minFetchDelay = options.minFetchDelay
 		this.maxFetchDelay = options.maxFetchDelay
 		this.maxFetchSize = options.maxFetchSize
 		this.maxMessageSize = options.maxMessageSize
-		this.producer = producer
-		this.consumer = consumer
+		this.kafka = kafka
 		if (options.partitions) {
-			this.producer.addPartitions(name, options.partitions.produce)
+			this.addWritablePartitions(options.partitions.produce)
 			this.consumePartitions = options.partitions.consume
 		}
+		this.partitions = new PartitionSet()
 		this.ready = true
 		this.compression = options.compression
 		this.readable = true
 		this.writable = true
 		this.encoding = null
 		this.outgoingMessages = new MessageBuffer(
-			this,
+			this.partitions,
 			options.batchSize,
-			options.queueTime,
-			this.producer
+			options.queueTime
+		)
+		this.outgoingMessages.on(
+			'error',
+			function (err) {
+				this.error(err)
+			}.bind(this)
 		)
 		this.bufferedMessages = []
 		this.emitMessages = emitMessages.bind(this)
@@ -97,8 +103,40 @@ module.exports = function (
 	}
 
 	Topic.prototype.saveOffsets = function () {
-		this.consumer.saveOffsets(this)
+		//this.consumer.saveOffsets(this)
 	}
+
+	// Partitions
+
+	Topic.prototype.partition = function (brokerId, partitionId) {
+		var name = brokerId + '-' + partitionId
+		var partition = this.partitions.get(name)
+		if (!partition) {
+			partition = new Partition(this, kafka.broker(brokerId), partitionId) // TODO options
+			this.partitions.add(partition)
+		}
+		return partition
+	}
+
+	Topic.prototype.addWritablePartitions = function (partitionInfo) {
+		if (!Array.isArray(partitionNames)) {
+			return
+		}
+		for (var i = 0; i < partitionNames.length; i++) {
+			var name = partitionNames[i]
+			var split = name.split(':')
+			if (split.length === 2) {
+				var brokerId = +split[0]
+				var partitionCount = +split[1]
+				for (var j = 0; j < partitionCount; j++) {
+					var p = this.partition(brokerId, j)
+					p.isWritable(true)
+				}
+			}
+		}
+	}
+
+	// TODO a way to add/remove readablePartitions
 
 	// Readable Stream
 
@@ -113,19 +151,20 @@ module.exports = function (
 	Topic.prototype.pause = function () {
 		logger.info('pause', this.name)
 		this.paused = true
-		this.consumer.pause(this)
+		this.partitions.pause()
 	}
 
 	Topic.prototype.resume = function () {
+		//TODO first resume setup
 		logger.info('resume', this.name)
 		this.paused = this._flushBufferedMessages()
 		if (!this.paused) {
-			this.consumer.resume(this)
+			this.partitions.resume()
 		}
 	}
 
 	Topic.prototype.destroy = function () {
-		this.consumer.stop(this)
+		this.partitions.stop()
 	}
 
 	Topic.prototype.setEncoding = function (encoding) {
@@ -134,6 +173,7 @@ module.exports = function (
 
 	//Writable Stream
 
+	//TODO figure out the new ready behaviour
 	Topic.prototype.setReady = function (ready) {
 		if(ready && !this.ready) {
 			this.outgoingMessages.flush()

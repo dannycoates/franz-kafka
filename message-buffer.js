@@ -1,8 +1,10 @@
-module.exports = function () {
+module.exports = function (
+	inherits,
+	EventEmitter) {
 
 	function handleResponse(err) {
 		if (err) {
-			this.topic.error(err)
+			this.emit('error', err)
 		}
 	}
 
@@ -24,30 +26,28 @@ module.exports = function () {
 
 	function send() {
 		var sent = false
-		if (this.producer.isReady(this.topic)) {
+		if (this.partitions.isReady()) {
 			var batches = batchify(this.messages, this.batchSize)
 			for (var i = 0; i < batches.length; i++) {
-				sent = this.producer.write(
-					this.topic,
-					batches[i],
-					this.produceResponder
-				)
+				var partition = this.partitions.nextWritable()
+				sent = partition.write(batches[i], this.produceResponder)
 			}
 			this.reset()
 		}
 		return sent
 	}
 
-	function MessageBuffer(topic, batchSize, queueTime, producer) {
-		this.topic = topic
+	function MessageBuffer(partitions, batchSize, queueTime) {
+		this.partitions = partitions
 		this.batchSize = batchSize
 		this.queueTime = queueTime
-		this.producer = producer
 		this.messages = []
 		this.timer = null
 		this.send = send.bind(this)
 		this.produceResponder = handleResponse.bind(this)
+		EventEmitter.call(this)
 	}
+	inherits(MessageBuffer, EventEmitter)
 
 	MessageBuffer.prototype.reset = function () {
 		this.messages = []

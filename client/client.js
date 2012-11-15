@@ -44,13 +44,13 @@ module.exports = function (
 		this.connection.on(
 			'error',
 			function (err) {
-				//logger.info('client error', err)
+				logger.info('client error', err)
 			}
 		)
 		this.connection.on(
 			'close',
 			function (hadError) {
-				logger.info('client closed with error:', hadError)
+				logger.info('client closed. with error:', hadError)
 				this.emit('end')
 			}.bind(this)
 		)
@@ -77,12 +77,12 @@ module.exports = function (
 	Client.prototype._send = function (request, cb) {
 		request.serialize(
 			this.connection,
-			afterSend.bind(this, cb, request)
+			afterSend.bind(this, request, cb)
 		)
 		return this.ready
 	}
 
-	function afterSend(cb, request, err, written) {
+	function afterSend(request, cb, err, written) {
 		if (err) {
 			this.ready = false
 			return cb(err)
@@ -134,6 +134,8 @@ module.exports = function (
 	}
 
 	Client.compression = Message.compression
+
+	Client.nil = { ready: false }
 
 	return Client
 }
