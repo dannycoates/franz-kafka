@@ -33,11 +33,11 @@ module.exports = function (
 		this.maxFetchSize = options.maxFetchSize
 		this.maxMessageSize = options.maxMessageSize
 		this.kafka = kafka
+		this.partitions = new PartitionSet()
 		if (options.partitions) {
 			this.addWritablePartitions(options.partitions.produce)
 			this.consumePartitions = options.partitions.consume
 		}
-		this.partitions = new PartitionSet()
 		this.ready = true
 		this.compression = options.compression
 		this.readable = true
@@ -112,22 +112,22 @@ module.exports = function (
 		var name = brokerId + '-' + partitionId
 		var partition = this.partitions.get(name)
 		if (!partition) {
-			partition = new Partition(this, kafka.broker(brokerId), partitionId) // TODO options
+			partition = new Partition(this, this.kafka.broker(brokerId), partitionId) // TODO options
 			this.partitions.add(partition)
 		}
 		return partition
 	}
 
 	Topic.prototype.addWritablePartitions = function (partitionInfo) {
-		if (!Array.isArray(partitionNames)) {
+		if (!Array.isArray(partitionInfo)) {
 			return
 		}
-		for (var i = 0; i < partitionNames.length; i++) {
-			var name = partitionNames[i]
-			var split = name.split(':')
-			if (split.length === 2) {
-				var brokerId = +split[0]
-				var partitionCount = +split[1]
+		for (var i = 0; i < partitionInfo.length; i++) {
+			var info = partitionInfo[i]
+			var brokerPartitionCount = info.split(':')
+			if (brokerPartitionCount.length === 2) {
+				var brokerId = +brokerPartitionCount[0]
+				var partitionCount = +brokerPartitionCount[1]
 				for (var j = 0; j < partitionCount; j++) {
 					var p = this.partition(brokerId, j)
 					p.isWritable(true)

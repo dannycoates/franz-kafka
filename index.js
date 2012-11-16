@@ -30,11 +30,11 @@ function setLogger(logger) {
 module.exports = function (options) {
 	var logger = setLogger(options.logger)
 
-	var PartitionSet = require('./partition-set')()
 	var Client = require('./client')(logger)
 	var Broker = require('./broker')(logger, inherits, EventEmitter, Client)
 	var BrokerPool = require('./broker-pool')(logger, inherits, EventEmitter)
 	var Partition = require('./partition')(logger, inherits, EventEmitter, Broker)
+	var PartitionSet = require('./partition-set')(inherits, EventEmitter, Partition)
 	var MessageBuffer = require('./message-buffer')(inherits, EventEmitter)
 	var Topic = require('./topic')(logger, inherits, Stream, MessageBuffer, Partition, PartitionSet)
 	var StaticConnector = require('./static-connector')(logger, inherits, EventEmitter, Broker)

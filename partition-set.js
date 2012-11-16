@@ -1,6 +1,7 @@
 module.exports = function (
 	inherits,
-	EventEmitter) {
+	EventEmitter,
+	Partition) {
 
 	function PartitionSet() {
 		this.partitionsByName = {}

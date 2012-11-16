@@ -76,7 +76,7 @@ module.exports = function (
 			this.connector = new ZKConnector(this.options)
 		}
 		else if (this.options.brokers) {
-			this.connector = new StaticConnector(this.options)
+			this.connector = new StaticConnector(this, this.options)
 		}
 		this.allBrokers.once(
 			'brokerAdded', // TODO: create a more definitive event in the connectors
