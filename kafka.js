@@ -117,6 +117,11 @@ module.exports = function (
 		return topic
 	}
 
+	Kafka.prototype.resumeTopic = function (topic) {
+		// TODO this is where we might trigger client registration
+		// and partition rebalancing
+	}
+
 	Kafka.prototype.broker = function (id) {
 		return this.allBrokers.get(id)
 	}

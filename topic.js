@@ -37,7 +37,7 @@ module.exports = function (
 		this.partitions.on('ready', partitionsReady.bind(this))
 		if (options.partitions) {
 			this.addWritablePartitions(options.partitions.produce)
-			this.consumePartitions = options.partitions.consume
+			this.makePartitionsReadable(options.partitions.consume)
 		}
 		this.ready = true
 		this.compression = options.compression
@@ -147,6 +147,20 @@ module.exports = function (
 		}
 	}
 
+	Topic.prototype.makePartitionsReadable = function (partitionInfo) {
+		if (!Array.isArray(partitionInfo)) {
+			return
+		}
+		for (var i = 0; i < partitionInfo.length; i++) {
+			var info = partitionInfo[i]
+			var nameOffset = info.split(':')
+			var name = nameOffset[0]
+			//TODO offset
+			var partition = this.partitions.get(name)
+			partition.isReadable(true)
+		}
+	}
+
 	// TODO a way to add/remove readablePartitions
 
 	// Readable Stream
@@ -166,8 +180,8 @@ module.exports = function (
 	}
 
 	Topic.prototype.resume = function () {
-		//TODO first resume setup
 		logger.info('resume', this.name)
+		this.kafka.resumeTopic(this)
 		this.paused = this._flushBufferedMessages()
 		if (!this.paused) {
 			this.partitions.resume()

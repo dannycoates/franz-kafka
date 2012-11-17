@@ -25,14 +25,21 @@ module.exports = function (
 	ProduceRequest.prototype._compress = function (cb) {
 		var messageBuffers = this.messages.map(messageToBuffer)
 		var messagesLength = messageBuffers.reduce(sumLength, 0)
-		var wrapper = new Message()
-		wrapper.setData(
-			Buffer.concat(messageBuffers, messagesLength),
-			this.topic.compression,
-			function (err) {
-				cb(err, wrapper.toBuffer())
-			}
-		)
+		var payload = Buffer.concat(messageBuffers, messagesLength)
+
+		if (this.topic.compression === Message.compression.NONE) {
+			cb(null, payload)
+		}
+		else {
+			var wrapper = new Message()
+			wrapper.setData(
+				payload,
+				this.topic.compression,
+				function (err) {
+					cb(err, wrapper.toBuffer())
+				}
+			)
+		}
 	}
 
 	//  0                   1                   2                   3

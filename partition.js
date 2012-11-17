@@ -47,7 +47,6 @@ module.exports = function (logger, inherits, EventEmitter, Broker) {
 		this.emit('ready', this)
 	}
 
-	// TODO consider Partition as an EventEmitter with no reference to topic
 	function Partition(topic, broker, id, offset) {
 		this.topic = topic
 		this.broker = broker
