@@ -21,7 +21,7 @@ module.exports = function (
 
 		for (var i = 0; i < this.options.brokers.length; i++) {
 			var b = this.options.brokers[i]
-			var broker = new Broker(b.id, b.host, b.port, this.options)
+			var broker = new Broker(b.id, { host: b.host, port: b.port })
 			broker.once('connect', this.onBrokerConnect)
 			broker.connect()
 		}

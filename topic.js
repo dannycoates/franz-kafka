@@ -161,8 +161,6 @@ module.exports = function (
 		}
 	}
 
-	// TODO a way to add/remove readablePartitions
-
 	// Readable Stream
 
 	Topic.prototype.error = function (err) {

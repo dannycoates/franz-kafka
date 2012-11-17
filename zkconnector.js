@@ -84,7 +84,7 @@ module.exports = function (
 		var self = this
 		var split = info.split(':')
 		if (split.length > 2) {
-			var broker = new Broker(id, split[1], split[2], this.options)
+			var broker = new Broker(id, { host: split[1], port: split[2]})
 			broker.on('ready', this.brokerReady)
 			broker.once(
 				'connect',

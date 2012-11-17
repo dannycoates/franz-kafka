@@ -127,12 +127,10 @@ module.exports = function (
 	}
 
 	Kafka.prototype.addBroker = function (broker) {
-		broker.on('ready', function () { /* TODO */})
 		this.allBrokers.add(broker)
 	}
 
 	Kafka.prototype.removeBroker = function (broker) {
-		broker.removeListener(/* TODO */)
 		this.allBrokers.remove(broker)
 	}
 

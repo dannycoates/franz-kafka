@@ -5,13 +5,11 @@ module.exports = function (
 	Client) {
 
 	//TODO change to (id, options)
-	function Broker(id, host, port, options) {
+	function Broker(id, options) {
 		this.id = id
 		this.client = Client.nil
 		this.reconnectAttempts = 0
-		this.options = options || {}
-		this.options.host = host
-		this.options.port = port
+		this.options = options
 		this.connector = this.connect.bind(this)
 		EventEmitter.call(this)
 	}
