@@ -33,5 +33,9 @@ module.exports = function (
 		this.kafka.addBroker(broker)
 	}
 
+	StaticConnector.prototype.register = function (topic) {
+		// noop
+	}
+
 	return StaticConnector
 }

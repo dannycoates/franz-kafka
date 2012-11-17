@@ -46,6 +46,9 @@ module.exports = function (
 			delete this.writables[name]
 			this.partitions.splice(i, 1)
 		}
+		if (this.partitions.length === 0) {
+			this.emit('empty')
+		}
 	}
 
 	PartitionSet.prototype.next = function () {

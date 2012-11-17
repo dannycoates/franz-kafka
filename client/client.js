@@ -10,6 +10,7 @@ module.exports = function (
 	ProduceRequest,
 	OffsetsRequest
 ) {
+
 	function Client(id, options) {
 		this.id = id
 		this.ready = false
@@ -135,7 +136,7 @@ module.exports = function (
 		}
 	}
 
-	function connectionError() {
+	function connectionError(err) {
 		logger.info('client error', err.message)
 	}
 

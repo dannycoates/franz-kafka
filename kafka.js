@@ -73,7 +73,7 @@ module.exports = function (
 	// onconnect: function () {}
 	Kafka.prototype.connect = function (onconnect) {
 		if (this.options.zookeeper) {
-			this.connector = new ZKConnector(this.options)
+			this.connector = new ZKConnector(this, this.options)
 		}
 		else if (this.options.brokers) {
 			this.connector = new StaticConnector(this, this.options)
@@ -117,9 +117,8 @@ module.exports = function (
 		return topic
 	}
 
-	Kafka.prototype.resumeTopic = function (topic) {
-		// TODO this is where we might trigger client registration
-		// and partition rebalancing
+	Kafka.prototype.register = function (topic) {
+		this.connector.register(topic)
 	}
 
 	Kafka.prototype.broker = function (id) {
@@ -132,6 +131,17 @@ module.exports = function (
 
 	Kafka.prototype.removeBroker = function (broker) {
 		this.allBrokers.remove(broker)
+		broker.destroy()
+	}
+
+	Kafka.prototype.removeBrokersNotIn = function (brokerIds) {
+		var brokers = this.allBrokers.all()
+		for (var i = 0; i < brokers.length; i++) {
+			var broker = brokers[i]
+			if (brokerIds.indexOf(broker.id) === -1) {
+				this.removeBroker(broker)
+			}
+		}
 	}
 
 	return Kafka

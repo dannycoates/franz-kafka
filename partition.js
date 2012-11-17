@@ -1,12 +1,12 @@
 module.exports = function (logger, inherits, EventEmitter, Broker) {
 
-	function Partition(topic, broker, id, offset) {
+	function Partition(topic, broker, id) {
 		this.topic = topic
 		this.broker = broker
 		this.id = id
 		this.fetchDelay = this.topic.minFetchDelay
 		this.emptyFetches = 0
-		this.offset = offset || 0
+		this.offset = 0
 		this.paused = true
 		this.bufferedMessages = null
 		this.timer = null
@@ -81,10 +81,6 @@ module.exports = function (logger, inherits, EventEmitter, Broker) {
 	Partition.prototype.reset = function () {
 		this.pause()
 		this.resume()
-	}
-
-	Partition.prototype.saveOffset = function (saver) {
-		saver.saveOffset(this)
 	}
 
 	Partition.prototype.write = function (messages, cb) {

@@ -119,17 +119,13 @@ module.exports = function (
 		return this.paused || this.bufferedMessages.length > 0
 	}
 
-	Topic.prototype.saveOffsets = function () {
-		//this.consumer.saveOffsets(this)
-	}
-
 	// Partitions
 
 	Topic.prototype.partition = function (brokerId, partitionId) {
 		var name = brokerId + '-' + partitionId
 		var partition = this.partitions.get(name)
 		if (!partition) {
-			partition = new Partition(this, this.kafka.broker(brokerId), partitionId) // TODO options
+			partition = new Partition(this, this.kafka.broker(brokerId), partitionId)
 			this.partitions.add(partition)
 		}
 		return partition
@@ -161,9 +157,14 @@ module.exports = function (
 			var info = partitionInfo[i]
 			var nameOffset = info.split(':')
 			var name = nameOffset[0]
-			//TODO offset
+
 			var partition = this.partitions.get(name)
 			partition.isReadable(true)
+
+			if (nameOffset.length === 2) {
+				var offset = +nameOffset[1]
+				partition.offset = offset
+			}
 		}
 	}
 
@@ -185,7 +186,7 @@ module.exports = function (
 
 	Topic.prototype.resume = function () {
 		logger.info('resume', this.name)
-		this.kafka.resumeTopic(this)
+		this.kafka.register(this)
 		this.paused = this._flushBufferedMessages()
 		if (!this.paused) {
 			this.partitions.resume()

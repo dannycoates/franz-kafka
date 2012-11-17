@@ -4,12 +4,13 @@ module.exports = function (
 	EventEmitter,
 	Client) {
 
-	//TODO change to (id, options)
 	function Broker(id, options) {
 		this.id = id
 		this.client = Client.nil
 		this.reconnectAttempts = 0
 		this.options = options
+		this.host = options.host
+		this.port = options.port
 		this.connector = this.connect.bind(this)
 		this.onClientEnd = clientEnd.bind(this)
 		this.onClientReady = clientReady.bind(this)
@@ -94,7 +95,7 @@ module.exports = function (
 		this.emit('ready')
 	}
 
-	Broker.nil = new Broker()
+	Broker.nil = new Broker(-1, {})
 
 	return Broker
 }
