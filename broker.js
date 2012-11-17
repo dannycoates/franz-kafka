@@ -37,6 +37,7 @@ module.exports = function (
 				logger.info('broker connected', this.id)
 				this.reconnectAttempts = 0
 				this.emit('connect', this)
+				this.emit('ready')
 			}.bind(this)
 		)
 		this.client.once(
@@ -54,7 +55,7 @@ module.exports = function (
 			'ready',
 			function () {
 				logger.info('broker ready', this.id)
-				this.emit('ready', this)
+				this.emit('ready')
 			}.bind(this)
 		)
 	}

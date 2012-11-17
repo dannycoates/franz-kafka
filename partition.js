@@ -43,6 +43,10 @@ module.exports = function (logger, inherits, EventEmitter, Broker) {
 		}
 	}
 
+	function brokerReady() {
+		this.emit('ready', this)
+	}
+
 	// TODO consider Partition as an EventEmitter with no reference to topic
 	function Partition(topic, broker, id, offset) {
 		this.topic = topic
@@ -56,6 +60,7 @@ module.exports = function (logger, inherits, EventEmitter, Broker) {
 		this.paused = true
 		this.bufferedMessages = null
 		this.timer = null
+		this.broker.on('ready', brokerReady.bind(this))
 		// TODO: readable and writable determine whether this partition
 		// can be used for consuming or producing.
 		// I think writable might always be true, but readable is determined

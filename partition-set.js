@@ -9,6 +9,7 @@ module.exports = function (
 		this.current = 0
 		this.onReadableChanged = readableChanged.bind(this)
 		this.onWritableChanged = writableChanged.bind(this)
+		this.onPartitionReady = partitionReady.bind(this)
 		this.readables = {}
 		this.writables = {}
 		EventEmitter.call(this)
@@ -33,6 +34,10 @@ module.exports = function (
 		}
 	}
 
+	function partitionReady(partition) {
+		this.emit('ready')
+	}
+
 	PartitionSet.prototype.get = function (name) {
 		return this.partitionsByName[name]
 	}
@@ -41,6 +46,7 @@ module.exports = function (
 		if (this.partitions.indexOf(partition) < 0) {
 			partition.on('writable', this.onWritableChanged)
 			partition.on('readable', this.onReadableChanged)
+			partition.on('ready', this.onPartitionReady)
 			this.partitionsByName[partition.name()] = partition
 			this.partitions.push(partition)
 		}
@@ -52,6 +58,7 @@ module.exports = function (
 			var p = this.partitions[i]
 			p.removeListener('writable', this.onWritableChanged)
 			p.removeListener('readable', this.onReadableChanged)
+			p.removeListener('ready', this.onPartitionReady)
 			delete this.partitionsByName[p.name()]
 			this.partitions.splice(i, 1)
 		}
@@ -69,7 +76,7 @@ module.exports = function (
 	PartitionSet.prototype.isReady = function () {
 		return this.partitions.some(
 			function (p) {
-				return p.isReady()
+				return p.isReady() && p.isWritable()
 			}
 		)
 	}

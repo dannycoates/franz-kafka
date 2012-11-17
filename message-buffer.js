@@ -34,6 +34,9 @@ module.exports = function (
 			}
 			this.reset()
 		}
+		else {
+			this.emit('full')
+		}
 		return sent
 	}
 

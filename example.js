@@ -18,6 +18,7 @@ var kafka = new Kafka({
 	logger: console
 })
 var i = 0
+var ready = true
 
 file.once('open', function () {
 	kafka.connect(function () {
@@ -45,11 +46,14 @@ file.once('open', function () {
 			this.resume()
 		})
 
+		baz.on('drain', function() { ready = true })
+
 		setInterval(
 			function () {
-				baz.write('i is ' + i + '\n')
-				i++
-				//baz.write("the time is: " + Date.now())
+				if (ready) {
+					ready = baz.write('i is ' + i + '\n')
+					i++
+				}
 			},
 			10
 		)

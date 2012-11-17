@@ -84,18 +84,6 @@ module.exports = function (
 				this.emit('connect')
 			}.bind(this)
 		)
-		this.connector.on(
-			'brokerReady',
-			function (b) {
-				var topics = Object.keys(this.topics)
-				for (var i = 0; i < topics.length; i++) {
-					var name = topics[i]
-					if (b.hasTopic(name)) {
-						this.topics[name].setReady(true)
-					}
-				}
-			}.bind(this)
-		)
 		if (typeof(onconnect) === 'function') {
 			this.once('connect', onconnect)
 		}

@@ -44,7 +44,7 @@ module.exports = function (
 		this.connection.on(
 			'error',
 			function (err) {
-				logger.info('client error', err)
+				logger.info('client error', err.message)
 			}
 		)
 		this.connection.on(

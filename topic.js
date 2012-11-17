@@ -34,6 +34,7 @@ module.exports = function (
 		this.maxMessageSize = options.maxMessageSize
 		this.kafka = kafka
 		this.partitions = new PartitionSet()
+		this.partitions.on('ready', partitionsReady.bind(this))
 		if (options.partitions) {
 			this.addWritablePartitions(options.partitions.produce)
 			this.consumePartitions = options.partitions.consume
@@ -43,17 +44,13 @@ module.exports = function (
 		this.readable = true
 		this.writable = true
 		this.encoding = null
-		this.outgoingMessages = new MessageBuffer(
+		this.produceBuffer = new MessageBuffer(
 			this.partitions,
 			options.batchSize,
 			options.queueTime
 		)
-		this.outgoingMessages.on(
-			'error',
-			function (err) {
-				this.error(err)
-			}.bind(this)
-		)
+		this.produceBuffer.on('error', this.error.bind(this))
+		this.produceBuffer.on('full', produceBufferFull.bind(this))
 		this.bufferedMessages = []
 		this.emitMessages = emitMessages.bind(this)
 		Stream.call(this)
@@ -62,6 +59,20 @@ module.exports = function (
 
 	//emit end
 	//emit close
+
+	function partitionsReady() {
+		if(!this.ready) {
+			logger.log('topic ready', this.name)
+			this.produceBuffer.flush()
+			this.emit('drain')
+		}
+		this.ready = true
+	}
+
+	function produceBufferFull() {
+		logger.info('topic full', this.name)
+		this.ready = false
+	}
 
 	function emitMessages(payloads) {
 		for (var i = 0; i < payloads.length; i++) {
@@ -173,21 +184,12 @@ module.exports = function (
 
 	//Writable Stream
 
-	//TODO figure out the new ready behaviour
-	Topic.prototype.setReady = function (ready) {
-		if(ready && !this.ready) {
-			this.outgoingMessages.flush()
-			this.emit('drain')
-		}
-		this.ready = ready
-	}
-
 	Topic.prototype.write = function (data, encoding) {
 		if(!Buffer.isBuffer(data)) {
 			encoding = encoding || 'utf8'
 			data = new Buffer(data, encoding)
 		}
-		return this.outgoingMessages.push(data)
+		return this.produceBuffer.push(data)
 	}
 
 	Topic.prototype.end = function (data, encoding) {
