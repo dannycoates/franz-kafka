@@ -28,29 +28,35 @@ module.exports = function (
 	// }
 	function Topic(name, kafka, options) {
 		this.name = name || ''
+		this.kafka = kafka
+		this.ready = true
+		this.encoding = null
+		this.readable = true // required Stream property
+		this.writable = true // required Stream property
+		this.compression = options.compression
 		this.minFetchDelay = options.minFetchDelay
 		this.maxFetchDelay = options.maxFetchDelay
 		this.maxFetchSize = options.maxFetchSize
 		this.maxMessageSize = options.maxMessageSize
-		this.kafka = kafka
+
 		this.partitions = new PartitionSet()
-		this.partitions.on('ready', partitionsReady.bind(this))
+		this.onPartitionsReady = partitionsReady.bind(this)
+		this.partitions.on('ready', this.onPartitionsReady)
 		if (options.partitions) {
 			this.addWritablePartitions(options.partitions.produce)
 			this.makePartitionsReadable(options.partitions.consume)
 		}
-		this.ready = true
-		this.compression = options.compression
-		this.readable = true
-		this.writable = true
-		this.encoding = null
+
 		this.produceBuffer = new MessageBuffer(
 			this.partitions,
 			options.batchSize,
 			options.queueTime
 		)
-		this.produceBuffer.on('error', this.error.bind(this))
-		this.produceBuffer.on('full', produceBufferFull.bind(this))
+		this.onError = this.error.bind(this)
+		this.onProduceBufferFull = produceBufferFull.bind(this)
+		this.produceBuffer.on('error', this.onError)
+		this.produceBuffer.on('full', this.onProduceBufferFull)
+
 		this.bufferedMessages = []
 		this.emitMessages = emitMessages.bind(this)
 		Stream.call(this)

@@ -4,14 +4,6 @@ module.exports = function (
 	Message,
 	State) {
 
-	function ProduceError(message, length) {
-		this.message = message
-		this.length = length
-		Error.call(this)
-	}
-	inherits(ProduceError, Error)
-	ProduceError.prototype.name = 'Produce Error'
-
 	function ProduceRequest(topic, partitionId, messages) {
 		this.topic = topic
 		this.partitionId = partitionId
@@ -90,6 +82,14 @@ module.exports = function (
 		cb()
 		return State.done
 	}
+
+	function ProduceError(message, length) {
+		this.message = message
+		this.length = length
+		Error.call(this)
+	}
+	inherits(ProduceError, Error)
+	ProduceError.prototype.name = 'Produce Error'
 
 	return ProduceRequest
 }

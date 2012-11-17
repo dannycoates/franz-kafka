@@ -38,33 +38,6 @@ module.exports = function (logger, inherits, EventEmitter) {
 		return this.brokers[this.current]
 	}
 
-	BrokerPool.prototype.nextReady = function () {
-		for (var i = 0; i < this.brokers.length; i++) {
-			var b = this.next()
-			if (b.isReady()) {
-				break
-			}
-		}
-		return b
-	}
-
-	BrokerPool.prototype.randomReady = function () {
-		var len = this.brokers.length
-		var n = (Math.floor(Math.random() * len))
-		for (var i = 0; i < len; i++) {
-			var b = this.brokers[n]
-			if (b.isReady()) {
-				break
-			}
-			n = (n + 1) % len
-		}
-		return b
-	}
-
-	BrokerPool.prototype.areAnyReady = function () {
-		return this.brokers.some(function (b) { return b.isReady() })
-	}
-
 	BrokerPool.prototype.get = function (id) {
 		return this.brokersById[id]
 	}

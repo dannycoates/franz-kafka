@@ -1,52 +1,5 @@
 module.exports = function (logger, inherits, EventEmitter, Broker) {
 
-
-	function exponentialBackoff(attempt, delay) {
-		return Math.floor(
-			Math.random() * Math.pow(2, attempt) * 10 + delay
-		)
-	}
-
-	function handleResponse(err, length, messages) {
-		this.pending = false
-		if (err) {
-			return this.topic.error(err)
-		}
-		this.offset += length
-		if (this.paused) {
-			logger.info(
-				'buffered', messages.length,
-				'topic', this.topic.name,
-				'broker', this.broker.id,
-				'partition', this.id
-			)
-			this.bufferedMessages = messages
-		}
-		else {
-			this.topic.parseMessages(this, messages)
-			this._setFetchDelay(length === 0)
-			this._loop()
-		}
-	}
-
-	function fetch() {
-		if (this.isReady()) {
-			this.broker.fetch(
-				this.topic,
-				this,
-				this.fetchResponder
-			)
-		}
-		else {
-			this._setFetchDelay(true)
-			this._loop()
-		}
-	}
-
-	function brokerReady() {
-		this.emit('ready', this)
-	}
-
 	function Partition(topic, broker, id, offset) {
 		this.topic = topic
 		this.broker = broker
@@ -54,20 +7,17 @@ module.exports = function (logger, inherits, EventEmitter, Broker) {
 		this.fetchDelay = this.topic.minFetchDelay
 		this.emptyFetches = 0
 		this.offset = offset || 0
-		this.fetcher = fetch.bind(this)
-		this.fetchResponder = handleResponse.bind(this)
 		this.paused = true
 		this.bufferedMessages = null
 		this.timer = null
-		this.broker.on('ready', brokerReady.bind(this))
-		// TODO: readable and writable determine whether this partition
-		// can be used for consuming or producing.
-		// I think writable might always be true, but readable is determined
-		// by the "connector" (as it exists now).
-		// I'm trying to factor out the connector in favor of a "controller"
-		// that does partition and broker management
 		this.readable = null
 		this.writable = null
+		this.fetcher = fetch.bind(this)
+		this.onFetchResponse = fetchResponse.bind(this)
+		this.onBrokerReady = brokerReady.bind(this)
+		this.onBrokerDestroy = brokerDestroy.bind(this)
+		this.broker.on('ready', this.onBrokerReady)
+		this.broker.on('destroy', this.onBrokerDestroy)
 		EventEmitter.call(this)
 	}
 	inherits(Partition, EventEmitter)
@@ -162,6 +112,62 @@ module.exports = function (logger, inherits, EventEmitter, Broker) {
 	}
 
 	Partition.nil = new Partition({ minFetchDelay: 0 }, Broker.nil, -1)
+
+	function exponentialBackoff(attempt, delay) {
+		return Math.floor(
+			Math.random() * Math.pow(2, attempt) * 10 + delay
+		)
+	}
+
+	function fetchResponse(err, length, messages) {
+		this.pending = false
+		if (err) {
+			return this.topic.error(err)
+		}
+		this.offset += length
+		if (this.paused) {
+			logger.info(
+				'buffered', messages.length,
+				'topic', this.topic.name,
+				'broker', this.broker.id,
+				'partition', this.id
+			)
+			this.bufferedMessages = messages
+		}
+		else {
+			this.topic.parseMessages(this, messages)
+			this._setFetchDelay(length === 0)
+			this._loop()
+		}
+	}
+
+	function fetch() {
+		if (this.isReady()) {
+			this.broker.fetch(
+				this.topic,
+				this,
+				this.onFetchResponse
+			)
+		}
+		else {
+			this._setFetchDelay(true)
+			this._loop()
+		}
+	}
+
+	function brokerReady() {
+		this.emit('ready', this)
+	}
+
+	function brokerDestroy() {
+		this.pause()
+		this.isWritable(false)
+		this.isReadable(false)
+		this.broker.removeListener('ready', this.onBrokerReady)
+		this.broker.removeListener('destroy', this.onBrokerDestroy)
+		this.broker = Broker.nil
+		this.emit('destroy', this)
+	}
 
 	return Partition
 }

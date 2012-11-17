@@ -10,33 +10,12 @@ module.exports = function (
 		this.onReadableChanged = readableChanged.bind(this)
 		this.onWritableChanged = writableChanged.bind(this)
 		this.onPartitionReady = partitionReady.bind(this)
+		this.onPartitionDestroy = partitionDestroy.bind(this)
 		this.readables = {}
 		this.writables = {}
 		EventEmitter.call(this)
 	}
 	inherits(PartitionSet, EventEmitter)
-
-	function readableChanged(partition) {
-		if (partition.isReadable()) {
-			this.readables[partition.name()] = partition
-		}
-		else {
-			delete this.readables[partition.name()]
-		}
-	}
-
-	function writableChanged(partition) {
-		if (partition.isWritable()) {
-			this.writables[partition.name()] = partition
-		}
-		else {
-			delete this.writables[partition.name()]
-		}
-	}
-
-	function partitionReady(partition) {
-		this.emit('ready')
-	}
 
 	PartitionSet.prototype.get = function (name) {
 		return this.partitionsByName[name]
@@ -47,6 +26,7 @@ module.exports = function (
 			partition.on('writable', this.onWritableChanged)
 			partition.on('readable', this.onReadableChanged)
 			partition.on('ready', this.onPartitionReady)
+			partition.on('destroy', this.onPartitionDestroy)
 			this.partitionsByName[partition.name()] = partition
 			this.partitions.push(partition)
 		}
@@ -56,10 +36,14 @@ module.exports = function (
 		var i = this.partitions.indexOf(partition)
 		if (i >= 0) {
 			var p = this.partitions[i]
+			var name = p.name()
 			p.removeListener('writable', this.onWritableChanged)
 			p.removeListener('readable', this.onReadableChanged)
 			p.removeListener('ready', this.onPartitionReady)
-			delete this.partitionsByName[p.name()]
+			p.removeListener('destroy', this.onPartitionDestroy)
+			delete this.partitionsByName[name]
+			delete this.readables[name]
+			delete this.writables[name]
 			this.partitions.splice(i, 1)
 		}
 	}
@@ -121,6 +105,32 @@ module.exports = function (
 	}
 
 	PartitionSet.nil = new PartitionSet()
+
+	function readableChanged(partition) {
+		if (partition.isReadable()) {
+			this.readables[partition.name()] = partition
+		}
+		else {
+			delete this.readables[partition.name()]
+		}
+	}
+
+	function writableChanged(partition) {
+		if (partition.isWritable()) {
+			this.writables[partition.name()] = partition
+		}
+		else {
+			delete this.writables[partition.name()]
+		}
+	}
+
+	function partitionReady(partition) {
+		this.emit('ready')
+	}
+
+	function partitionDestroy(partition) {
+		this.remove(partition)
+	}
 
 	return PartitionSet
 }

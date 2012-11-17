@@ -2,6 +2,40 @@ module.exports = function (
 	inherits,
 	EventEmitter) {
 
+	function MessageBuffer(partitions, batchSize, queueTime) {
+		this.partitions = partitions
+		this.batchSize = batchSize
+		this.queueTime = queueTime
+		this.messages = []
+		this.timer = null
+		this.send = send.bind(this)
+		this.produceResponder = handleResponse.bind(this)
+		EventEmitter.call(this)
+	}
+	inherits(MessageBuffer, EventEmitter)
+
+	MessageBuffer.prototype.reset = function () {
+		this.messages = []
+		clearTimeout(this.timer)
+		this.timer = null
+	}
+
+	MessageBuffer.prototype.push = function(message) {
+		if (!this.timer) {
+			this.timer = setTimeout(this.send, this.queueTime)
+		}
+		if (this.messages.push(message) >= this.batchSize) {
+			return this.send()
+		}
+		return true
+	}
+
+	MessageBuffer.prototype.flush = function () {
+		if (this.messages.length > 0) {
+			this.send()
+		}
+	}
+
 	function handleResponse(err) {
 		if (err) {
 			this.emit('error', err)
@@ -38,40 +72,6 @@ module.exports = function (
 			this.emit('full')
 		}
 		return sent
-	}
-
-	function MessageBuffer(partitions, batchSize, queueTime) {
-		this.partitions = partitions
-		this.batchSize = batchSize
-		this.queueTime = queueTime
-		this.messages = []
-		this.timer = null
-		this.send = send.bind(this)
-		this.produceResponder = handleResponse.bind(this)
-		EventEmitter.call(this)
-	}
-	inherits(MessageBuffer, EventEmitter)
-
-	MessageBuffer.prototype.reset = function () {
-		this.messages = []
-		clearTimeout(this.timer)
-		this.timer = null
-	}
-
-	MessageBuffer.prototype.push = function(message) {
-		if (!this.timer) {
-			this.timer = setTimeout(this.send, this.queueTime)
-		}
-		if (this.messages.push(message) >= this.batchSize) {
-			return this.send()
-		}
-		return true
-	}
-
-	MessageBuffer.prototype.flush = function () {
-		if (this.messages.length > 0) {
-			this.send()
-		}
 	}
 
 	return MessageBuffer
