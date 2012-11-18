@@ -29,7 +29,6 @@ module.exports = function (
 	function Topic(name, kafka, options) {
 		this.name = name || ''
 		this.kafka = kafka
-		this.ready = true
 		this.encoding = null
 		this.readable = true // required Stream property
 		this.writable = true // required Stream property
@@ -53,9 +52,7 @@ module.exports = function (
 			options.queueTime
 		)
 		this.onError = this.error.bind(this)
-		this.onProduceBufferFull = produceBufferFull.bind(this)
 		this.produceBuffer.on('error', this.onError)
-		this.produceBuffer.on('full', this.onProduceBufferFull)
 
 		this.bufferedMessages = []
 		this.emitMessages = emitMessages.bind(this)
@@ -67,17 +64,10 @@ module.exports = function (
 	//emit close
 
 	function partitionsReady() {
-		if(!this.ready) {
-			logger.log('topic ready', this.name)
-			this.produceBuffer.flush()
+		if(this.produceBuffer.flush()) {
+			logger.info('drain', this.name)
 			this.emit('drain')
 		}
-		this.ready = true
-	}
-
-	function produceBufferFull() {
-		logger.info('topic full', this.name)
-		this.ready = false
 	}
 
 	function emitMessages(payloads) {
@@ -99,7 +89,7 @@ module.exports = function (
 		}
 	}
 
-	Topic.prototype.parseMessages = function(partition, messages) {
+	Topic.prototype.parseMessages = function (partition, messages) {
 		this.emit('offset', partition.name, partition.offset)
 		for (var i = 0; i < messages.length; i++) {
 			messages[i].unpack(this.emitMessages)

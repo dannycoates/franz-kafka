@@ -48,15 +48,14 @@ file.once('open', function () {
 
 		baz.on('drain', function() { ready = true })
 
-		setInterval(
-			function () {
-				if (ready) {
-					ready = baz.write('i is ' + i + '\n')
-					i++
-				}
-			},
-			10
-		)
+		function writeLoop() {
+			if (ready) {
+				ready = baz.write('i is ' + i + '\n')
+				i++
+			}
+			setTimeout(writeLoop, 10)
+		}
+		writeLoop()
 
 		}
 	)

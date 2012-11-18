@@ -20,20 +20,19 @@ module.exports = function (
 		this.timer = null
 	}
 
-	MessageBuffer.prototype.push = function(message) {
-		if (!this.timer) {
-			this.timer = setTimeout(this.send, this.queueTime)
-		}
-		if (this.messages.push(message) >= this.batchSize) {
-			return this.send()
-		}
-		return true
+	MessageBuffer.prototype.push = function (message) {
+		this.messages.push(message)
+		return this.flush()
 	}
 
 	MessageBuffer.prototype.flush = function () {
-		if (this.messages.length > 0) {
-			this.send()
+		if (this.messages.length >= this.batchSize) {
+			return this.send()
 		}
+		if (!this.timer) {
+			this.timer = setTimeout(this.send, this.queueTime)
+		}
+		return true
 	}
 
 	function handleResponse(err) {
@@ -67,9 +66,6 @@ module.exports = function (
 				sent = partition.write(batches[i], this.produceResponder)
 			}
 			this.reset()
-		}
-		else {
-			this.emit('full')
 		}
 		return sent
 	}
