@@ -166,15 +166,16 @@ module.exports = function (
 		}
 	}
 
-	// Readable Stream
-
 	Topic.prototype.error = function (err) {
 		if (!this.paused) {
 			this.pause()
 		}
 		logger.info('topic', this.name, 'error', err.message)
 		this.emit('error', err)
+		return false
 	}
+
+	// Readable Stream
 
 	Topic.prototype.pause = function () {
 		logger.info('pause', this.name)
@@ -205,6 +206,9 @@ module.exports = function (
 		if(!Buffer.isBuffer(data)) {
 			encoding = encoding || 'utf8'
 			data = new Buffer(data, encoding)
+		}
+		if (data.length > this.maxMessageSize) {
+			return this.error(new Error("message too big"))
 		}
 		return this.produceBuffer.push(data)
 	}

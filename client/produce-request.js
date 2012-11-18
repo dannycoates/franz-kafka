@@ -56,7 +56,8 @@ module.exports = function (
 		if (err) {
 			return cb(err)
 		}
-		if (buffer.length > this.topic.maxMessageSize) {
+		if (this.topic.compression !== Message.compression.NONE &&
+		    buffer.length > this.topic.maxMessageSize) {
 			return cb(new ProduceError("message too big", buffer.length))
 		}
 		var header = new RequestHeader(
@@ -66,11 +67,11 @@ module.exports = function (
 			this.partitionId
 		)
 		try {
-			header.serialize(stream)
+			var written = header.serialize(stream)
 			var mlen = new Buffer(4)
 			mlen.writeUInt32BE(buffer.length, 0)
-			stream.write(mlen)
-			var written = stream.write(buffer)
+			written = stream.write(mlen) && written
+			written = stream.write(buffer) && written
 		}
 		catch (e) {
 			err = e

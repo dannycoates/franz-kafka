@@ -64,6 +64,7 @@ module.exports = function (
 			return cb(err)
 		}
 		if (!written) {
+			logger.info('connection', 'wait')
 			this.ready = false
 		}
 		this.receiver.push(request, cb)

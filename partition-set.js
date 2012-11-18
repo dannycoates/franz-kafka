@@ -1,8 +1,7 @@
 module.exports = function (
 	logger,
 	inherits,
-	EventEmitter,
-	Partition) {
+	EventEmitter) {
 
 	function PartitionSet() {
 		this.partitionsByName = {}
@@ -69,11 +68,11 @@ module.exports = function (
 	}
 
 	PartitionSet.prototype.nextWritable = function () {
-		var partition = Partition.nil
+		var partition = null
 		for (var i = 0; i < this.partitions.length; i++) {
 			partition = this.next()
 			if (partition.isWritable() && partition.isReady()) {
-				break;
+				return partition
 			}
 		}
 		return partition
@@ -106,8 +105,6 @@ module.exports = function (
 	PartitionSet.prototype.stop = function () {
 		this.readable().forEach(stopPartition)
 	}
-
-	PartitionSet.nil = new PartitionSet()
 
 	function readableChanged(partition) {
 		if (partition.isReadable()) {
