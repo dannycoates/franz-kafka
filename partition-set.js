@@ -1,4 +1,5 @@
 module.exports = function (
+	logger,
 	inherits,
 	EventEmitter,
 	Partition) {
@@ -27,8 +28,9 @@ module.exports = function (
 			partition.on('readable', this.onReadableChanged)
 			partition.on('ready', this.onPartitionReady)
 			partition.on('destroy', this.onPartitionDestroy)
-			this.partitionsByName[partition.name()] = partition
+			this.partitionsByName[partition.name] = partition
 			this.partitions.push(partition)
+			logger.info('added partition', partition.name)
 		}
 	}
 
@@ -36,7 +38,7 @@ module.exports = function (
 		var i = this.partitions.indexOf(partition)
 		if (i >= 0) {
 			var p = this.partitions[i]
-			var name = p.name()
+			var name = p.name
 			p.removeListener('writable', this.onWritableChanged)
 			p.removeListener('readable', this.onReadableChanged)
 			p.removeListener('ready', this.onPartitionReady)
@@ -45,9 +47,7 @@ module.exports = function (
 			delete this.readables[name]
 			delete this.writables[name]
 			this.partitions.splice(i, 1)
-		}
-		if (this.partitions.length === 0) {
-			this.emit('empty')
+			logger.info('removed partition', name)
 		}
 	}
 
@@ -111,19 +111,22 @@ module.exports = function (
 
 	function readableChanged(partition) {
 		if (partition.isReadable()) {
-			this.readables[partition.name()] = partition
+			this.readables[partition.name] = partition
 		}
 		else {
-			delete this.readables[partition.name()]
+			delete this.readables[partition.name]
 		}
 	}
 
 	function writableChanged(partition) {
 		if (partition.isWritable()) {
-			this.writables[partition.name()] = partition
+			this.writables[partition.name] = partition
+			if (this.isReady()) {
+				this.emit('ready')
+			}
 		}
 		else {
-			delete this.writables[partition.name()]
+			delete this.writables[partition.name]
 		}
 	}
 

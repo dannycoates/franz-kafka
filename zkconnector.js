@@ -20,8 +20,9 @@ module.exports = function (
 	//   zookeeper:
 	//   groupId:
 	// }
-	function ZKConnector(kafka, options) {
+	function ZKConnector(kafka, brokers, options) {
 		this.kafka = kafka
+		this.brokers = brokers
 		this.options = options
 		this.zk = new ZK(options)
 		this.hasPendingTopics = false
@@ -50,12 +51,12 @@ module.exports = function (
 		async.forEachSeries(
 			brokerIds,
 			function (id, next) {
-				if (!self.kafka.broker(id)) {
+				if (!self.brokers.get(id)) {
 					self.zk.getBroker(id, self._createBroker.bind(self))
 				}
 			},
 			function (err) {
-				self.kafka.removeBrokersNotIn(brokerIds)
+				self._removeBrokersNotIn(brokerIds)
 			}
 		)
 	}
@@ -65,13 +66,13 @@ module.exports = function (
 		if (hostPort.length > 2) {
 			var host = hostPort[1]
 			var port = hostPort[2]
-			var oldBroker = this.kafka.broker(id)
+			var oldBroker = this.brokers.get(id)
 			if (oldBroker) {
 				if (oldBroker.host === host && oldBroker.port === port) {
 					return
 				}
 				else {
-					this.kafka.removeBroker(oldBroker)
+					this.brokers.remove(oldBroker)
 				}
 			}
 			var broker = new Broker(id, { host: host, port: port })
@@ -83,6 +84,16 @@ module.exports = function (
 	ZKConnector.prototype._setPartitionCount = function (brokerId, topicName, count) {
 		var topic = this.kafka.topic(topicName)
 		topic.addWritablePartitions([brokerId + ':' + count])
+	}
+
+	ZKConnector.prototype._removeBrokersNotIn = function (brokerIds) {
+		var brokers = this.brokers.all()
+		for (var i = 0; i < brokers.length; i++) {
+			var broker = brokers[i]
+			if (brokerIds.indexOf(broker.id) === -1) {
+				this.brokers.remove(broker)
+			}
+		}
 	}
 
 	ZKConnector.prototype._rebalance = function () {
@@ -129,7 +140,7 @@ module.exports = function (
 	}
 
 	function brokerConnect(broker) {
-		this.kafka.addBroker(broker)
+		this.brokers.add(broker)
 	}
 
 	return ZKConnector

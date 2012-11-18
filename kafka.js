@@ -28,14 +28,20 @@ module.exports = function (
 		this.connector = null
 		this.groupId = this.options.groupId || 'franz-kafka'
 		this.consumerId = genConsumerId(this.groupId)
-		this.allBrokers = new BrokerPool('all')
+		this.onBrokerAdded = brokerAdded.bind(this)
+		this.onBrokerRemoved = brokerRemoved.bind(this)
+		this.allBrokers = new BrokerPool()
+		this.allBrokers.once('added', this.onBrokerAdded)
+		this.allBrokers.on('removed', this.onBrokerRemoved)
 		this.topicDefaults = this.defaultOptions(options)
 		EventEmitter.call(this)
 	}
 	inherits(Kafka, EventEmitter)
 
 	function genConsumerId(groupId) {
-		return groupId + '_' + os.hostname() + '-' + Date.now() + '-' + "DEADBEEF"
+		var rand = Buffer(4)
+		rand.writeUInt32BE(Math.floor(Math.random() * 0xFFFFFFFF), 0)
+		return groupId + '_' + os.hostname() + '-' + Date.now() + '-' + rand.toString('hex')
 	}
 
 	function setCompression(string) {
@@ -73,17 +79,11 @@ module.exports = function (
 	// onconnect: function () {}
 	Kafka.prototype.connect = function (onconnect) {
 		if (this.options.zookeeper) {
-			this.connector = new ZKConnector(this, this.options)
+			this.connector = new ZKConnector(this, this.allBrokers, this.options)
 		}
 		else if (this.options.brokers) {
-			this.connector = new StaticConnector(this, this.options)
+			this.connector = new StaticConnector(this, this.allBrokers, this.options)
 		}
-		this.allBrokers.once(
-			'brokerAdded', // TODO: create a more definitive event in the connectors
-			function () {
-				this.emit('connect')
-			}.bind(this)
-		)
 		if (typeof(onconnect) === 'function') {
 			this.once('connect', onconnect)
 		}
@@ -125,23 +125,12 @@ module.exports = function (
 		return this.allBrokers.get(id)
 	}
 
-	Kafka.prototype.addBroker = function (broker) {
-		this.allBrokers.add(broker)
+	function brokerAdded(broker) {
+		this.emit('connect')
 	}
 
-	Kafka.prototype.removeBroker = function (broker) {
-		this.allBrokers.remove(broker)
+	function brokerRemoved(broker) {
 		broker.destroy()
-	}
-
-	Kafka.prototype.removeBrokersNotIn = function (brokerIds) {
-		var brokers = this.allBrokers.all()
-		for (var i = 0; i < brokers.length; i++) {
-			var broker = brokers[i]
-			if (brokerIds.indexOf(broker.id) === -1) {
-				this.removeBroker(broker)
-			}
-		}
 	}
 
 	return Kafka

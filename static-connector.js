@@ -14,13 +14,12 @@ module.exports = function (
 	//     }
 	//   ]
 	// }
-	function StaticConnector(kafka, options) {
-		this.kafka = kafka
-		this.options = options
-		this.onBrokerConnect = addBroker.bind(this)
+	function StaticConnector(kafka, brokers, options) {
+		this.brokers = brokers
+		this.onBrokerConnect = brokerConnect.bind(this)
 
-		for (var i = 0; i < this.options.brokers.length; i++) {
-			var b = this.options.brokers[i]
+		for (var i = 0; i < options.brokers.length; i++) {
+			var b = options.brokers[i]
 			var broker = new Broker(b.id, { host: b.host, port: b.port })
 			broker.once('connect', this.onBrokerConnect)
 			broker.connect()
@@ -29,8 +28,8 @@ module.exports = function (
 	}
 	inherits(StaticConnector, EventEmitter)
 
-	function addBroker(broker) {
-		this.kafka.addBroker(broker)
+	function brokerConnect(broker) {
+		this.brokers.add(broker)
 	}
 
 	StaticConnector.prototype.register = function (topic) {

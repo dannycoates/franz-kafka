@@ -4,6 +4,7 @@ module.exports = function (logger, inherits, EventEmitter, Broker) {
 		this.topic = topic
 		this.broker = broker
 		this.id = id
+		this.name = this.broker.id + '-' + this.id
 		this.fetchDelay = this.topic.minFetchDelay
 		this.emptyFetches = 0
 		this.offset = 0
@@ -44,10 +45,6 @@ module.exports = function (logger, inherits, EventEmitter, Broker) {
 		else {
 			this.fetcher()
 		}
-	}
-
-	Partition.prototype.name = function () {
-		return this.broker.id + '-' + this.id
 	}
 
 	Partition.prototype.flush = function () {

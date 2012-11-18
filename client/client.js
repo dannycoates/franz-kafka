@@ -126,7 +126,6 @@ module.exports = function (
 		logger.info('client end')
 		this.ready = false
 		this.emit('end')
-		this.connection = null
 	}
 
 	function connectionDrain() {

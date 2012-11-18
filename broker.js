@@ -59,6 +59,7 @@ module.exports = function (
 		this.client.removeListener('ready', this.onClientReady)
 		this.client.end()
 		this.client = Client.nil
+		logger.info('broker destroyed', this.id)
 		this.emit('destroy')
 	}
 
@@ -72,7 +73,6 @@ module.exports = function (
 		logger.info('broker connected', this.id)
 		this.reconnectAttempts = 0
 		this.emit('connect', this)
-		this.emit('ready')
 	}
 
 	function clientEnd() {
