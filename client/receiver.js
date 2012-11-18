@@ -6,36 +6,18 @@ module.exports = function (
 
 	function Receiver(stream) {
 		this.stream = stream
-		this.stream.on(
-			'readable',
-			function () {
-				this.read()
-			}.bind(this)
-		)
-		this.stream.on(
-			'end',
-			function () {
-				logger.info(
-					'receiver', 'ended',
-					'queue', this.queue.length
-				)
-				while (this.queue.length > 0) {
-					this.current.abort()
-					this.next()
-				}
-				this.current.abort()
-				this.closed = true
-			}.bind(this)
-		)
-		this.stream.on(
-			'error',
-			function (err) {
-				logger.info('receiver error', err.message)
-			}
-		)
 		this.queue = []
 		this.current = State.nil
 		this.closed = false
+
+		this.onStreamReadable = streamReadable.bind(this)
+		this.onStreamEnd = streamEnd.bind(this)
+		this.onStreamError = streamError.bind(this)
+
+		this.stream.on('readable', this.onStreamReadable)
+		this.stream.on('end', this.onStreamEnd)
+		this.stream.on('error', this.onStreamError)
+
 		EventEmitter.call(this)
 	}
 	inherits(Receiver, EventEmitter)
@@ -84,6 +66,30 @@ module.exports = function (
 			this.queue.push(response)
 		}
 		return true
+	}
+
+	function streamReadable() {
+		this.read()
+	}
+
+	function streamEnd() {
+		logger.info(
+			'receiver', 'ended',
+			'queue', this.queue.length
+		)
+		while (this.queue.length > 0) {
+			this.current.abort()
+			this.next()
+		}
+		this.current.abort()
+		this.closed = true
+		this.stream.removeListener('readable', this.onStreamReadable)
+		this.stream.removeListener('end', this.onStreamEnd)
+		this.stream.removeListener('error', this.onStreamError)
+	}
+
+	function streamError(err) {
+		logger.info('receiver error', err.message)
 	}
 
 	return Receiver

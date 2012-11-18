@@ -4,29 +4,64 @@ module.exports = function (
 	EventEmitter,
 	Client) {
 
-	function TopicPartition(name, count) {
-		this.name = name
-		this.count = count
-		this.current = 0
-	}
-
-	TopicPartition.prototype.next = function () {
-		this.current = (this.current + 1) % this.count
-		return this.current
-	}
-
-	function Broker(id, host, port, options) {
+	function Broker(id, options) {
 		this.id = id
-		this.topicPartitions = {}
-		this.client = null
+		this.client = Client.nil
 		this.reconnectAttempts = 0
-		options = options || {}
-		options.host = host
-		options.port = port
-		this.connect(options)
+		this.options = options
+		this.host = options.host
+		this.port = options.port
+		this.connector = this.connect.bind(this)
+		this.onClientEnd = clientEnd.bind(this)
+		this.onClientReady = clientReady.bind(this)
+		this.onClientConnect = clientConnect.bind(this)
 		EventEmitter.call(this)
 	}
 	inherits(Broker, EventEmitter)
+
+	Broker.prototype.connect = function () {
+		var options = this.options
+		logger.info(
+			'connecting broker', this.id,
+			'host', options.host,
+			'port', options.port
+		)
+		this.client = new Client(this.id, options)
+
+		this.client.once('connect', this.onClientConnect)
+		this.client.once('end', this.onClientEnd)
+		this.client.on('ready', this.onClientReady)
+
+		this.reconnectTimer = null
+	}
+
+	Broker.prototype.isReady = function () {
+		return this.client.ready
+	}
+
+	Broker.prototype.fetch = function (topic, partition, cb) {
+		this.client.fetch(topic, partition, cb)
+	}
+
+	Broker.prototype.write = function (partition, messages, cb) {
+		return this.client.write(partition.topic, messages, partition.id, cb)
+	}
+
+	Broker.prototype.drain = function (cb) {
+		this.client.drain(cb)
+	}
+
+	Broker.prototype.destroy = function () {
+		clearTimeout(this.reconnectTimer)
+		this.reconnectTimer = null
+		this.client.removeListener('connect', this.onClientConnect)
+		this.client.removeListener('end', this.onClientEnd)
+		this.client.removeListener('ready', this.onClientReady)
+		this.client.end()
+		this.client = Client.nil
+		logger.info('broker destroyed', this.id)
+		this.emit('destroy')
+	}
 
 	function exponentialBackoff(attempt) {
 		return Math.floor(
@@ -34,81 +69,34 @@ module.exports = function (
 		)
 	}
 
-	Broker.prototype.connect = function (options) {
+	function clientConnect() {
+		logger.info('broker connected', this.id)
+		this.reconnectAttempts = 0
+		this.emit('connect', this)
+		this.emit('ready')
+	}
+
+	function clientEnd() {
+		this.reconnectAttempts++
 		logger.info(
-			'connecting broker', this.id,
-			'host', options.host,
-			'port', options.port
+			'broker ended', this.id,
+			'reconnects', this.reconnectAttempts
 		)
-		this.client = new Client(this.id, options)
-		this.client.once(
-			'connect',
-			function () {
-				logger.info('broker connected', this.id)
-				this.reconnectAttempts = 0
-				this.emit('connect', this)
-			}.bind(this)
-		)
-		this.client.once(
-			'end',
-			function () {
-				this.reconnectAttempts++
-				logger.info('broker ended', this.id, this.reconnectAttempts)
-				setTimeout(
-					function () {
-						this.connect(options)
-					},
-					exponentialBackoff(this.reconnectAttempts)
-				)
-			}.bind(this)
-		)
-		this.client.on(
-			'ready',
-			function () {
-				logger.info('broker ready', this.id)
-				this.emit('ready', this)
-			}.bind(this)
+		this.client.removeListener('connect', this.onClientConnect)
+		this.client.removeListener('end', this.onClientEnd)
+		this.client.removeListener('ready', this.onClientReady)
+		this.reconnectTimer = setTimeout(
+			this.connector,
+			exponentialBackoff(this.reconnectAttempts)
 		)
 	}
 
-	Broker.prototype.isReady = function () {
-		return this.client.ready
+	function clientReady() {
+		logger.info('broker ready', this.id)
+		this.emit('ready')
 	}
 
-	Broker.prototype.hasTopic = function (name) {
-		return !!this.topicPartitions[name]
-	}
-
-	Broker.prototype.setTopicPartitions = function (name, count) {
-		logger.info(
-			'set broker partitions', this.id,
-			'topic', name,
-			'partitions', count
-		)
-		this.topicPartitions[name] = new TopicPartition(name, count)
-	}
-
-	Broker.prototype.clearTopicPartitions = function () {
-		logger.info('clear broker partitions', this.id)
-		this.topicPartitions = {}
-	}
-
-	Broker.prototype.fetch = function (topic, partition, cb) {
-		this.client.fetch(topic, partition, cb)
-	}
-
-	Broker.prototype.write = function (topic, messages, cb) {
-		var partitionId = 0
-		var tp = this.topicPartitions[topic.name]
-		if (tp) {
-			partitionId = tp.next()
-		}
-		return this.client.write(topic, messages, partitionId, cb)
-	}
-
-	Broker.prototype.drain = function (cb) {
-		this.client.drain(cb)
-	}
+	Broker.nil = new Broker(-1, {})
 
 	return Broker
 }

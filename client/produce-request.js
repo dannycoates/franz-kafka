@@ -4,14 +4,6 @@ module.exports = function (
 	Message,
 	State) {
 
-	function ProduceError(message, length) {
-		this.message = message
-		this.length = length
-		Error.call(this)
-	}
-	inherits(ProduceError, Error)
-	ProduceError.prototype.name = 'Produce Error'
-
 	function ProduceRequest(topic, partitionId, messages) {
 		this.topic = topic
 		this.partitionId = partitionId
@@ -25,14 +17,21 @@ module.exports = function (
 	ProduceRequest.prototype._compress = function (cb) {
 		var messageBuffers = this.messages.map(messageToBuffer)
 		var messagesLength = messageBuffers.reduce(sumLength, 0)
-		var wrapper = new Message()
-		wrapper.setData(
-			Buffer.concat(messageBuffers, messagesLength),
-			this.topic.compression,
-			function (err) {
-				cb(err, wrapper.toBuffer())
-			}
-		)
+		var payload = Buffer.concat(messageBuffers, messagesLength)
+
+		if (this.topic.compression === Message.compression.NONE) {
+			cb(null, payload)
+		}
+		else {
+			var wrapper = new Message()
+			wrapper.setData(
+				payload,
+				this.topic.compression,
+				function (err) {
+					cb(err, wrapper.toBuffer())
+				}
+			)
+		}
 	}
 
 	//  0                   1                   2                   3
@@ -57,7 +56,8 @@ module.exports = function (
 		if (err) {
 			return cb(err)
 		}
-		if (buffer.length > this.topic.maxMessageSize) {
+		if (this.topic.compression !== Message.compression.NONE &&
+		    buffer.length > this.topic.maxMessageSize) {
 			return cb(new ProduceError("message too big", buffer.length))
 		}
 		var header = new RequestHeader(
@@ -67,11 +67,11 @@ module.exports = function (
 			this.partitionId
 		)
 		try {
-			header.serialize(stream)
+			var written = header.serialize(stream)
 			var mlen = new Buffer(4)
 			mlen.writeUInt32BE(buffer.length, 0)
-			stream.write(mlen)
-			var written = stream.write(buffer)
+			written = stream.write(mlen) && written
+			written = stream.write(buffer) && written
 		}
 		catch (e) {
 			err = e
@@ -83,6 +83,14 @@ module.exports = function (
 		cb()
 		return State.done
 	}
+
+	function ProduceError(message, length) {
+		this.message = message
+		this.length = length
+		Error.call(this)
+	}
+	inherits(ProduceError, Error)
+	ProduceError.prototype.name = 'Produce Error'
 
 	return ProduceRequest
 }
