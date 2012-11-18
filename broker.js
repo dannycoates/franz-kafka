@@ -73,6 +73,7 @@ module.exports = function (
 		logger.info('broker connected', this.id)
 		this.reconnectAttempts = 0
 		this.emit('connect', this)
+		this.emit('ready')
 	}
 
 	function clientEnd() {

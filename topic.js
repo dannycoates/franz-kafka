@@ -37,14 +37,12 @@ module.exports = function (
 		this.maxFetchDelay = options.maxFetchDelay
 		this.maxFetchSize = options.maxFetchSize
 		this.maxMessageSize = options.maxMessageSize
+		this.bufferedMessages = []
+		this.emitMessages = emitMessages.bind(this)
 
 		this.partitions = new PartitionSet()
 		this.onPartitionsReady = partitionsReady.bind(this)
 		this.partitions.on('ready', this.onPartitionsReady)
-		if (options.partitions) {
-			this.addWritablePartitions(options.partitions.produce)
-			this.addReadablePartitions(options.partitions.consume)
-		}
 
 		this.produceBuffer = new MessageBuffer(
 			this.partitions,
@@ -54,8 +52,11 @@ module.exports = function (
 		this.onError = this.error.bind(this)
 		this.produceBuffer.on('error', this.onError)
 
-		this.bufferedMessages = []
-		this.emitMessages = emitMessages.bind(this)
+		if (options.partitions) {
+			this.addWritablePartitions(options.partitions.produce)
+			this.addReadablePartitions(options.partitions.consume)
+		}
+
 		Stream.call(this)
 	}
 	inherits(Topic, Stream)
