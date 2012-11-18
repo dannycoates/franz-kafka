@@ -43,7 +43,7 @@ module.exports = function (
 		this.partitions.on('ready', this.onPartitionsReady)
 		if (options.partitions) {
 			this.addWritablePartitions(options.partitions.produce)
-			this.makePartitionsReadable(options.partitions.consume)
+			this.addReadablePartitions(options.partitions.consume)
 		}
 
 		this.produceBuffer = new MessageBuffer(
@@ -111,12 +111,17 @@ module.exports = function (
 
 	// Partitions
 
-	Topic.prototype.partition = function (brokerId, partitionId) {
-		var name = brokerId + '-' + partitionId
+	Topic.prototype.partition = function (name) {
 		var partition = this.partitions.get(name)
 		if (!partition) {
-			partition = new Partition(this, this.kafka.broker(brokerId), partitionId)
-			this.partitions.add(partition)
+			var brokerPartition = name.split('-')
+			var brokerId = +(brokerPartition[0])
+			var partitionId = +(brokerPartition[1])
+			var broker = this.kafka.broker(brokerId)
+			if (broker) {
+				partition = new Partition(this, broker, partitionId)
+				this.partitions.add(partition)
+			}
 		}
 		return partition
 	}
@@ -132,14 +137,16 @@ module.exports = function (
 				var brokerId = +brokerPartitionCount[0]
 				var partitionCount = +brokerPartitionCount[1]
 				for (var j = 0; j < partitionCount; j++) {
-					var p = this.partition(brokerId, j)
-					p.isWritable(true)
+					var p = this.partition(brokerId + '-' + j)
+					if (p) {
+						p.isWritable(true)
+					}
 				}
 			}
 		}
 	}
 
-	Topic.prototype.makePartitionsReadable = function (partitionInfo) {
+	Topic.prototype.addReadablePartitions = function (partitionInfo) {
 		if (!Array.isArray(partitionInfo)) {
 			return
 		}
@@ -148,12 +155,13 @@ module.exports = function (
 			var nameOffset = info.split(':')
 			var name = nameOffset[0]
 
-			var partition = this.partitions.get(name)
-			partition.isReadable(true)
-
-			if (nameOffset.length === 2) {
-				var offset = +nameOffset[1]
-				partition.offset = offset
+			var partition = this.partition(name)
+			if (partition) {
+				partition.isReadable(true)
+				if (nameOffset.length === 2) {
+					var offset = +nameOffset[1]
+					partition.offset = offset
+				}
 			}
 		}
 	}

@@ -9,7 +9,7 @@ module.exports = function (
 		this.messages = []
 		this.timer = null
 		this.send = send.bind(this)
-		this.produceResponder = handleResponse.bind(this)
+		this.onProduceResponse = produceResponse.bind(this)
 		EventEmitter.call(this)
 	}
 	inherits(MessageBuffer, EventEmitter)
@@ -35,7 +35,7 @@ module.exports = function (
 		return true
 	}
 
-	function handleResponse(err) {
+	function produceResponse(err) {
 		if (err) {
 			this.emit('error', err)
 		}
@@ -63,7 +63,7 @@ module.exports = function (
 			var batches = batchify(this.messages, this.batchSize)
 			for (var i = 0; i < batches.length; i++) {
 				var partition = this.partitions.nextWritable()
-				sent = partition.write(batches[i], this.produceResponder)
+				sent = partition.write(batches[i], this.onProduceResponse)
 			}
 			this.reset()
 		}
