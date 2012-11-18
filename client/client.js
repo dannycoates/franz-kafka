@@ -10,54 +10,26 @@ module.exports = function (
 	ProduceRequest,
 	OffsetsRequest
 ) {
+
 	function Client(id, options) {
-		this.connection = net.connect(options)
-		this.connection.on(
-			'connect',
-			function () {
-				logger.info('client connect')
-				this.readableSteam = new ReadableStream()
-				this.readableSteam.wrap(this.connection)
-				this.receiver = new Receiver(this.readableSteam)
-				this.ready = true
-				this.emit('connect')
-			}.bind(this)
-		)
-		this.connection.on(
-			'end',
-			function () {
-				logger.info('client end')
-				this.ready = false
-				this.emit('end')
-				this.connection = null
-			}.bind(this)
-		)
-		this.connection.on(
-			'drain',
-			function () {
-				if (!this.ready) { //TODO: why is connection.drain so frequent?
-					this.ready = true
-					this.emit('ready')
-				}
-			}.bind(this)
-		)
-		this.connection.on(
-			'error',
-			function (err) {
-				//logger.info('client error', err)
-			}
-		)
-		this.connection.on(
-			'close',
-			function (hadError) {
-				logger.info('client closed with error:', hadError)
-				this.emit('end')
-			}.bind(this)
-		)
 		this.id = id
 		this.ready = false
 		this.readableSteam = null
 		this.receiver = null
+
+		this.connection = net.connect(options)
+		this.onConnectionConnect = connectionConnect.bind(this)
+		this.onConnectionEnd = connectionEnd.bind(this)
+		this.onConnectionDrain = connectionDrain.bind(this)
+		this.onConnectionError = connectionError.bind(this)
+		this.onConnectionClose = connectionClose.bind(this)
+
+		this.connection.on('connect', this.onConnectionConnect)
+		this.connection.on('end', this.onConnectionEnd)
+		this.connection.on('drain', this.onConnectionDrain)
+		this.connection.on('error', this.onConnectionError)
+		this.connection.on('close', this.onConnectionClose)
+
 		EventEmitter.call(this)
 	}
 	inherits(Client, EventEmitter)
@@ -74,20 +46,25 @@ module.exports = function (
 		)
 	}
 
+	Client.prototype.end = function () {
+		this.connection.end()
+	}
+
 	Client.prototype._send = function (request, cb) {
 		request.serialize(
 			this.connection,
-			afterSend.bind(this, cb, request)
+			afterSend.bind(this, request, cb)
 		)
 		return this.ready
 	}
 
-	function afterSend(cb, request, err, written) {
+	function afterSend(request, cb, err, written) {
 		if (err) {
 			this.ready = false
 			return cb(err)
 		}
 		if (!written) {
+			logger.info('connection', 'wait')
 			this.ready = false
 		}
 		this.receiver.push(request, cb)
@@ -134,6 +111,44 @@ module.exports = function (
 	}
 
 	Client.compression = Message.compression
+
+	Client.nil = { ready: false }
+
+	function connectionConnect() {
+		logger.info('client connect')
+		this.readableSteam = new ReadableStream()
+		this.readableSteam.wrap(this.connection)
+		this.receiver = new Receiver(this.readableSteam)
+		this.ready = true
+		this.emit('connect')
+	}
+
+	function connectionEnd() {
+		logger.info('client end')
+		this.ready = false
+		this.emit('end')
+	}
+
+	function connectionDrain() {
+		if (!this.ready) { //TODO: why is connection.drain so frequent?
+			this.ready = true
+			this.emit('ready')
+		}
+	}
+
+	function connectionError(err) {
+		logger.info('client error', err.message)
+	}
+
+	function connectionClose(hadError) {
+		logger.info('client closed. with error', hadError)
+		this.connection.removeListener('connect', this.onConnectionConnect)
+		this.connection.removeListener('end', this.onConnectionEnd)
+		this.connection.removeListener('drain', this.onConnectionDrain)
+		this.connection.removeListener('error', this.onConnectionError)
+		this.connection.removeListener('close', this.onConnectionClose)
+		this.emit('end')
+	}
 
 	return Client
 }

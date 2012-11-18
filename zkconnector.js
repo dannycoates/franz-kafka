@@ -4,9 +4,6 @@ module.exports = function (
 	inherits,
 	EventEmitter,
 	ZK,
-	Producer,
-	Consumer,
-	BrokerPool,
 	Broker
 	) {
 
@@ -23,31 +20,15 @@ module.exports = function (
 	//   zookeeper:
 	//   groupId:
 	// }
-	function ZKConnector(options) {
-		var self = this
+	function ZKConnector(kafka, brokers, options) {
+		this.kafka = kafka
+		this.brokers = brokers
 		this.options = options
 		this.zk = new ZK(options)
-		this.allBrokers = new BrokerPool('all')
-		this.producer = new Producer(this.allBrokers)
-		this.allBrokers.on(
-			'brokerAdded',
-			function (b) {
-				self.emit('brokerAdded', b)
-			}
-		)
-		this.allBrokers.on(
-			'brokerRemoved',
-			function (b) {
-				self.emit('brokerRemoved', b)
-			}
-		)
-		this.brokerReady = function () {
-			self.emit('brokerReady', this)
-		}
 		this.hasPendingTopics = false
 		this.interestedTopics = {}
 		this.registerTopics = registerTopics.bind(this)
-		this.consumer = new Consumer(this, options.groupId, this.allBrokers)
+		this.onBrokerConnect = brokerConnect.bind(this)
 		this.connect()
 		EventEmitter.call(this)
 	}
@@ -61,7 +42,7 @@ module.exports = function (
 			self.zk.subscribeToTopics()
 		})
 		this.zk.on('brokers', this._brokersChanged.bind(this))
-		this.zk.on('broker-topic-partition', this._setBrokerTopicPartitionCount.bind(this))
+		this.zk.on('broker-topic-partition', this._setPartitionCount.bind(this))
 		this.zk.on('consumers-changed', this._rebalance.bind(this))
 	}
 
@@ -70,33 +51,49 @@ module.exports = function (
 		async.forEachSeries(
 			brokerIds,
 			function (id, next) {
-				if (!self.allBrokers.contains(id)) {
+				if (!self.brokers.get(id)) {
 					self.zk.getBroker(id, self._createBroker.bind(self))
 				}
 			},
 			function (err) {
-				self.producer.removeBrokersNotIn(brokerIds)
+				self._removeBrokersNotIn(brokerIds)
 			}
 		)
 	}
 
 	ZKConnector.prototype._createBroker = function (id, info) {
-		var self = this
-		var split = info.split(':')
-		if (split.length > 2) {
-			var broker = new Broker(id, split[1], split[2], this.options)
-			broker.on('ready', this.brokerReady)
-			broker.once(
-				'connect',
-				function () {
-					self.allBrokers.add(broker)
+		var hostPort = info.split(':')
+		if (hostPort.length > 2) {
+			var host = hostPort[1]
+			var port = hostPort[2]
+			var oldBroker = this.brokers.get(id)
+			if (oldBroker) {
+				if (oldBroker.host === host && oldBroker.port === port) {
+					return
 				}
-			)
+				else {
+					this.brokers.remove(oldBroker)
+				}
+			}
+			var broker = new Broker(id, { host: host, port: port })
+			broker.once('connect', this.onBrokerConnect)
+			broker.connect()
 		}
 	}
 
-	ZKConnector.prototype._setBrokerTopicPartitionCount = function (broker, topic, count) {
-		this.producer.setBrokerTopicPartitionCount(broker, topic, count)
+	ZKConnector.prototype._setPartitionCount = function (brokerId, topicName, count) {
+		var topic = this.kafka.topic(topicName)
+		topic.addWritablePartitions([brokerId + ':' + count])
+	}
+
+	ZKConnector.prototype._removeBrokersNotIn = function (brokerIds) {
+		var brokers = this.brokers.all()
+		for (var i = 0; i < brokers.length; i++) {
+			var broker = brokers[i]
+			if (brokerIds.indexOf(broker.id) === -1) {
+				this.brokers.remove(broker)
+			}
+		}
 	}
 
 	ZKConnector.prototype._rebalance = function () {
@@ -133,19 +130,17 @@ module.exports = function (
 		}
 	}
 
-	ZKConnector.prototype.consume = function (topic) {
-		this.hasPendingTopics = true
-		this.interestedTopics[topic.name] = topic
-		process.nextTick(this.registerTopics)
+	ZKConnector.prototype.register = function (topic) {
+		return false // TODO enable when rebalance works
+		if (!this.interestedTopics[topic.name]) {
+			this.hasPendingTopics = true
+			this.interestedTopics[topic.name] = topic
+			process.nextTick(this.registerTopics)
+		}
 	}
 
-	ZKConnector.prototype.saveOffset = function (partition) {
-		logger.info(
-			'saving', partition.id,
-			'broker', partition.broker.id,
-			'offset', partition.offset
-		)
-		//TODO implement
+	function brokerConnect(broker) {
+		this.brokers.add(broker)
 	}
 
 	return ZKConnector

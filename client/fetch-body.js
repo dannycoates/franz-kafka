@@ -3,14 +3,6 @@ module.exports = function (
 	State,
 	Message) {
 
-	function FetchError(message, messageLength) {
-		this.message = message
-		this.messageLength = messageLength
-		Error.call(this)
-	}
-	inherits(FetchError, Error)
-	FetchError.prototype.name = 'Fetch Error'
-
 	function FetchBody(bytes) {
 		this.bytesParsed = 0
 		this.lastMessageLength = 0
@@ -54,6 +46,14 @@ module.exports = function (
 		}
 		return err
 	}
+
+	function FetchError(message, messageLength) {
+		this.message = message
+		this.messageLength = messageLength
+		Error.call(this)
+	}
+	inherits(FetchError, Error)
+	FetchError.prototype.name = 'Fetch Error'
 
 	return FetchBody
 }

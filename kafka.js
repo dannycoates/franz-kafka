@@ -1,6 +1,8 @@
 module.exports = function (
 	inherits,
 	EventEmitter,
+	os,
+	BrokerPool,
 	Topic,
 	ZKConnector,
 	StaticConnector,
@@ -23,12 +25,24 @@ module.exports = function (
 	function Kafka(options) {
 		this.topics = {}
 		this.options = options || {}
-		this.options.groupId = this.options.groupId || 'franz-kafka'
 		this.connector = null
+		this.groupId = this.options.groupId || 'franz-kafka'
+		this.consumerId = genConsumerId(this.groupId)
+		this.onBrokerAdded = brokerAdded.bind(this)
+		this.onBrokerRemoved = brokerRemoved.bind(this)
+		this.allBrokers = new BrokerPool()
+		this.allBrokers.once('added', this.onBrokerAdded)
+		this.allBrokers.on('removed', this.onBrokerRemoved)
 		this.topicDefaults = this.defaultOptions(options)
 		EventEmitter.call(this)
 	}
 	inherits(Kafka, EventEmitter)
+
+	function genConsumerId(groupId) {
+		var rand = Buffer(4)
+		rand.writeUInt32BE(Math.floor(Math.random() * 0xFFFFFFFF), 0)
+		return groupId + '_' + os.hostname() + '-' + Date.now() + '-' + rand.toString('hex')
+	}
 
 	function setCompression(string) {
 		var compression
@@ -65,29 +79,11 @@ module.exports = function (
 	// onconnect: function () {}
 	Kafka.prototype.connect = function (onconnect) {
 		if (this.options.zookeeper) {
-			this.connector = new ZKConnector(this.options)
+			this.connector = new ZKConnector(this, this.allBrokers, this.options)
 		}
 		else if (this.options.brokers) {
-			this.connector = new StaticConnector(this.options)
+			this.connector = new StaticConnector(this, this.allBrokers, this.options)
 		}
-		this.connector.once(
-			'brokerAdded', // TODO: create a more definitive event in the connectors
-			function () {
-				this.emit('connect')
-			}.bind(this)
-		)
-		this.connector.on(
-			'brokerReady',
-			function (b) {
-				var topics = Object.keys(this.topics)
-				for (var i = 0; i < topics.length; i++) {
-					var name = topics[i]
-					if (b.hasTopic(name)) {
-						this.topics[name].setReady(true)
-					}
-				}
-			}.bind(this)
-		)
 		if (typeof(onconnect) === 'function') {
 			this.once('connect', onconnect)
 		}
@@ -114,12 +110,27 @@ module.exports = function (
 		var topic = this.topics[name] ||
 			new Topic(
 				name,
-				this.connector.producer,
-				this.connector.consumer,
+				this,
 				setTopicOptions(options, this.topicDefaults)
 			)
 		this.topics[name] = topic
 		return topic
+	}
+
+	Kafka.prototype.register = function (topic) {
+		this.connector.register(topic)
+	}
+
+	Kafka.prototype.broker = function (id) {
+		return this.allBrokers.get(id)
+	}
+
+	function brokerAdded(broker) {
+		this.emit('connect')
+	}
+
+	function brokerRemoved(broker) {
+		broker.destroy()
 	}
 
 	return Kafka

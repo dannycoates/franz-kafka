@@ -2,7 +2,9 @@ module.exports = function (
 	logger,
 	inherits,
 	Stream,
-	MessageBuffer) {
+	MessageBuffer,
+	Partition,
+	PartitionSet) {
 
 	// A Topic is Readable/Writable Stream.
 	// It's the main interaction point of the API.
@@ -11,8 +13,7 @@ module.exports = function (
 	// API API API
 	//
 	// name: string
-	// producer: Producer
-	// consumer: Consumer
+	// kafka: Kafka
 	// options: {
 	//   minFetchDelay: number (ms)
 	//   maxFetchDelay: number (ms)
@@ -25,37 +26,50 @@ module.exports = function (
 	//     produce: [string] (broker:partitionCount) ex. '0:5'
 	//   }
 	// }
-	function Topic(name, producer, consumer, options) {
+	function Topic(name, kafka, options) {
 		this.name = name || ''
+		this.kafka = kafka
+		this.encoding = null
+		this.readable = true // required Stream property
+		this.writable = true // required Stream property
+		this.compression = options.compression
 		this.minFetchDelay = options.minFetchDelay
 		this.maxFetchDelay = options.maxFetchDelay
 		this.maxFetchSize = options.maxFetchSize
 		this.maxMessageSize = options.maxMessageSize
-		this.producer = producer
-		this.consumer = consumer
-		if (options.partitions) {
-			this.producer.addPartitions(name, options.partitions.produce)
-			this.consumePartitions = options.partitions.consume
-		}
-		this.ready = true
-		this.compression = options.compression
-		this.readable = true
-		this.writable = true
-		this.encoding = null
-		this.outgoingMessages = new MessageBuffer(
-			this,
-			options.batchSize,
-			options.queueTime,
-			this.producer
-		)
 		this.bufferedMessages = []
 		this.emitMessages = emitMessages.bind(this)
+
+		this.partitions = new PartitionSet()
+		this.onPartitionsReady = partitionsReady.bind(this)
+		this.partitions.on('ready', this.onPartitionsReady)
+
+		this.produceBuffer = new MessageBuffer(
+			this.partitions,
+			options.batchSize,
+			options.queueTime
+		)
+		this.onError = this.error.bind(this)
+		this.produceBuffer.on('error', this.onError)
+
+		if (options.partitions) {
+			this.addWritablePartitions(options.partitions.produce)
+			this.addReadablePartitions(options.partitions.consume)
+		}
+
 		Stream.call(this)
 	}
 	inherits(Topic, Stream)
 
 	//emit end
 	//emit close
+
+	function partitionsReady() {
+		if(this.produceBuffer.flush()) {
+			logger.info('drain', this.name)
+			this.emit('drain')
+		}
+	}
 
 	function emitMessages(payloads) {
 		for (var i = 0; i < payloads.length; i++) {
@@ -76,8 +90,8 @@ module.exports = function (
 		}
 	}
 
-	Topic.prototype.parseMessages = function(partition, messages) {
-		this.emit('offset', partition.name(), partition.offset)
+	Topic.prototype.parseMessages = function (partition, messages) {
+		this.emit('offset', partition.name, partition.offset)
 		for (var i = 0; i < messages.length; i++) {
 			messages[i].unpack(this.emitMessages)
 		}
@@ -96,11 +110,62 @@ module.exports = function (
 		return this.paused || this.bufferedMessages.length > 0
 	}
 
-	Topic.prototype.saveOffsets = function () {
-		this.consumer.saveOffsets(this)
+	// Partitions
+
+	Topic.prototype.partition = function (name) {
+		var partition = this.partitions.get(name)
+		if (!partition) {
+			var brokerPartition = name.split('-')
+			var brokerId = +(brokerPartition[0])
+			var partitionId = +(brokerPartition[1])
+			var broker = this.kafka.broker(brokerId)
+			if (broker) {
+				partition = new Partition(this, broker, partitionId)
+				this.partitions.add(partition)
+			}
+		}
+		return partition
 	}
 
-	// Readable Stream
+	Topic.prototype.addWritablePartitions = function (partitionInfo) {
+		if (!Array.isArray(partitionInfo)) {
+			return
+		}
+		for (var i = 0; i < partitionInfo.length; i++) {
+			var info = partitionInfo[i]
+			var brokerPartitionCount = info.split(':')
+			if (brokerPartitionCount.length === 2) {
+				var brokerId = +brokerPartitionCount[0]
+				var partitionCount = +brokerPartitionCount[1]
+				for (var j = 0; j < partitionCount; j++) {
+					var p = this.partition(brokerId + '-' + j)
+					if (p) {
+						p.isWritable(true)
+					}
+				}
+			}
+		}
+	}
+
+	Topic.prototype.addReadablePartitions = function (partitionInfo) {
+		if (!Array.isArray(partitionInfo)) {
+			return
+		}
+		for (var i = 0; i < partitionInfo.length; i++) {
+			var info = partitionInfo[i]
+			var nameOffset = info.split(':')
+			var name = nameOffset[0]
+
+			var partition = this.partition(name)
+			if (partition) {
+				partition.isReadable(true)
+				if (nameOffset.length === 2) {
+					var offset = +nameOffset[1]
+					partition.offset = offset
+				}
+			}
+		}
+	}
 
 	Topic.prototype.error = function (err) {
 		if (!this.paused) {
@@ -108,24 +173,28 @@ module.exports = function (
 		}
 		logger.info('topic', this.name, 'error', err.message)
 		this.emit('error', err)
+		return false
 	}
+
+	// Readable Stream
 
 	Topic.prototype.pause = function () {
 		logger.info('pause', this.name)
 		this.paused = true
-		this.consumer.pause(this)
+		this.partitions.pause()
 	}
 
 	Topic.prototype.resume = function () {
 		logger.info('resume', this.name)
+		this.kafka.register(this)
 		this.paused = this._flushBufferedMessages()
 		if (!this.paused) {
-			this.consumer.resume(this)
+			this.partitions.resume()
 		}
 	}
 
 	Topic.prototype.destroy = function () {
-		this.consumer.stop(this)
+		this.partitions.stop()
 	}
 
 	Topic.prototype.setEncoding = function (encoding) {
@@ -134,20 +203,15 @@ module.exports = function (
 
 	//Writable Stream
 
-	Topic.prototype.setReady = function (ready) {
-		if(ready && !this.ready) {
-			this.outgoingMessages.flush()
-			this.emit('drain')
-		}
-		this.ready = ready
-	}
-
 	Topic.prototype.write = function (data, encoding) {
 		if(!Buffer.isBuffer(data)) {
 			encoding = encoding || 'utf8'
 			data = new Buffer(data, encoding)
 		}
-		return this.outgoingMessages.push(data)
+		if (data.length > this.maxMessageSize) {
+			return this.error(new Error("message too big"))
+		}
+		return this.produceBuffer.push(data)
 	}
 
 	Topic.prototype.end = function (data, encoding) {

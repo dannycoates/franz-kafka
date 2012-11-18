@@ -31,21 +31,19 @@ module.exports = function (options) {
 	var logger = setLogger(options.logger)
 
 	var Client = require('./client')(logger)
-	var Partition = require('./partition')(logger)
-	var Owner = require('./owner')(Partition)
-	var Consumer = require('./consumer')(logger, async, os, inherits, EventEmitter, Owner)
 	var Broker = require('./broker')(logger, inherits, EventEmitter, Client)
 	var BrokerPool = require('./broker-pool')(logger, inherits, EventEmitter)
-	var Producer = require('./producer')(inherits, EventEmitter, BrokerPool)
-	var MessageBuffer = require('./message-buffer')()
-	var Topic = require('./topic')(logger, inherits, Stream, MessageBuffer)
-	var StaticConnector = require('./static-connector')(logger, inherits, EventEmitter, Producer, Consumer, BrokerPool, Broker)
+	var Partition = require('./partition')(logger, inherits, EventEmitter, Broker)
+	var PartitionSet = require('./partition-set')(logger, inherits, EventEmitter)
+	var MessageBuffer = require('./message-buffer')(inherits, EventEmitter)
+	var Topic = require('./topic')(logger, inherits, Stream, MessageBuffer, Partition, PartitionSet)
+	var StaticConnector = require('./static-connector')(logger, inherits, EventEmitter, Broker)
 
 	if (options.zookeeper) {
 		try {
 			var ZooKeeper = require('zookeeper')
 			var ZK = require('./zk')(logger, async, inherits, EventEmitter, ZooKeeper)
-			var ZKConnector = require('./zkconnector')(logger, async, inherits, EventEmitter, ZK, Producer, Consumer, BrokerPool, Broker)
+			var ZKConnector = require('./zkconnector')(logger, async, inherits, EventEmitter, ZK, Broker)
 		}
 		catch (e) {
 			logger.error('node-zookeeper could not be loaded')
@@ -53,6 +51,6 @@ module.exports = function (options) {
 		}
 	}
 
-	var Kafka = require('./kafka')(inherits, EventEmitter, Topic, ZKConnector, StaticConnector, Client.compression)
+	var Kafka = require('./kafka')(inherits, EventEmitter, os, BrokerPool, Topic, ZKConnector, StaticConnector, Client.compression)
 	return new Kafka(options)
 }
