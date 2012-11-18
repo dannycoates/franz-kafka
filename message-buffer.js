@@ -14,8 +14,7 @@ module.exports = function (
 	}
 	inherits(MessageBuffer, EventEmitter)
 
-	MessageBuffer.prototype.reset = function () {
-		this.messages = []
+	MessageBuffer.prototype.clearTimer = function () {
 		clearTimeout(this.timer)
 		this.timer = null
 	}
@@ -59,14 +58,15 @@ module.exports = function (
 
 	function send() {
 		var sent = false
-		if (this.partitions.isReady()) {
+		if (this.partitions.isReady() && this.messages.length > 0) {
 			var batches = batchify(this.messages, this.batchSize)
 			for (var i = 0; i < batches.length; i++) {
 				var partition = this.partitions.nextWritable()
 				sent = partition.write(batches[i], this.onProduceResponse)
 			}
-			this.reset()
+			this.messages = []
 		}
+		this.clearTimer()
 		return sent
 	}
 
