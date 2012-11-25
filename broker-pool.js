@@ -1,4 +1,6 @@
 module.exports = function (logger, inherits, EventEmitter) {
+
+	// A collection of Broker objects accessible by id or all
 	function BrokerPool() {
 		this.brokers = []
 		this.brokersById = {}

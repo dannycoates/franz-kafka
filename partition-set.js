@@ -1,8 +1,7 @@
-module.exports = function (
-	logger,
-	inherits,
-	EventEmitter) {
+module.exports = function (logger, inherits, EventEmitter) {
 
+	// A PartitionSet contains all of the known Partitions (for a Topic)
+	// It tracks which partitions are 'readable' and 'writable'
 	function PartitionSet() {
 		this.partitionsByName = {}
 		this.partitions = []
@@ -59,19 +58,17 @@ module.exports = function (
 		return this.partitions
 	}
 
+	function isReadyAndWritable(p) { return p.isReady() && p.isWritable() }
+
 	PartitionSet.prototype.isReady = function () {
-		return this.partitions.some(
-			function (p) {
-				return p.isReady() && p.isWritable()
-			}
-		)
+		return this.partitions.some(isReadyAndWritable)
 	}
 
 	PartitionSet.prototype.nextWritable = function () {
 		var partition = null
 		for (var i = 0; i < this.partitions.length; i++) {
 			partition = this.next()
-			if (partition.isWritable() && partition.isReady()) {
+			if (isReadyAndWritable(partition)) {
 				return partition
 			}
 		}
@@ -83,28 +80,26 @@ module.exports = function (
 	}
 
 	function readablePartition(p) { return p.isReadable() }
-
 	PartitionSet.prototype.readable = function () {
 		return this.partitions.filter(readablePartition)
 	}
 
 	function pausePartition(p) { p.pause() }
-
 	PartitionSet.prototype.pause = function () {
 		this.readable().forEach(pausePartition)
 	}
 
 	function resumePartition(p) { p.resume() }
-
 	PartitionSet.prototype.resume = function () {
 		this.readable().forEach(resumePartition)
 	}
 
 	function stopPartition(p) { p.stop() }
-
 	PartitionSet.prototype.stop = function () {
 		this.readable().forEach(stopPartition)
 	}
+
+	// Event handlers
 
 	function readableChanged(partition) {
 		if (partition.isReadable()) {

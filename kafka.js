@@ -13,13 +13,17 @@ module.exports = function (
 	// Topics to your heart's content.
 	//
 	// options: {
-	//   zookeeper: 'address:port'
-	//   brokers:   [{name: host: port: },...]
-	//   compression: 'none', 'gzip', 'snappy'
-	//   maxMessageSize: -1
-	//   queueTime: 5000
-	//   batchSize: 200
-	//   groupId: 'franz-kafka'
+	//   zookeeper: 'address:port',
+	//   brokers:   [{id: host: port: },...],
+	//   compression: 'none',
+	//   maxMessageSize: 1000000,
+	//   queueTime: 5000,
+	//   batchSize: 200,
+	//   groupId: 'franz-kafka',
+	//   minFetchDelay: 0,
+	//   maxFetchDelay: 10000,
+	//   maxFetchSize: 300*1024,
+	//   logger: null,
 	// }
 	//
 	function Kafka(options) {
@@ -62,6 +66,7 @@ module.exports = function (
 
 	Kafka.prototype.defaultOptions = function (options) {
 		var defaults = {}
+		options = options || {}
 		defaults.queueTime = options.queueTime || 5000
 		defaults.batchSize = options.batchSize || 200
 		defaults.minFetchDelay = options.minFetchDelay || 0
@@ -104,8 +109,20 @@ module.exports = function (
 	//
 	// name: string
 	// options: {
-	//
+	//   minFetchDelay: 0,      // defaults to the kafka.minFetchDelay
+	//   maxFetchDelay: 10000,  // defaults to the kafka.maxFetchDelay
+	//   maxFetchSize: 1000000, // defaults to the kafka.maxFetchSize
+	//   compression: 'none',   // defaults to the kafka.compression
+	//   batchSize: 200,        // defaults to the kafka.batchSize
+	//   queueTime: 5000,       // defaults to the kafka.queueTime
+	//   partitions: {
+	//   	consume: ['0-0:0'],   // array of strings with the form:
+	//                          //   'brokerId-partitionId:startOffset'
+	//   	produce: ['0:1']      // array of strings with the form:
+	//                          //   'brokerId:partitionCount'
+	//   }
 	// }
+	// returns: a Topic object
 	Kafka.prototype.topic = function (name, options) {
 		var topic = this.topics[name] ||
 			new Topic(
@@ -117,13 +134,25 @@ module.exports = function (
 		return topic
 	}
 
+	// Register the topic with the connector.
+	//
+	// topic: a Topic object
+	//
+	// Specifically, this is for use with the ZooKeeper connector. For the static
+	// connector this is a no-op
 	Kafka.prototype.register = function (topic) {
 		this.connector.register(topic)
 	}
 
+	// Get a broker by id from the list of all brokers.
+	//
+	// id: the number of the broker in it's configuration
+	// returns: a Broker object or undefined
 	Kafka.prototype.broker = function (id) {
 		return this.allBrokers.get(id)
 	}
+
+	// Event handlers
 
 	function brokerAdded(broker) {
 		this.emit('connect')

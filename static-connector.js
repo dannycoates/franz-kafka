@@ -1,9 +1,4 @@
-module.exports = function (
-	logger,
-	inherits,
-	EventEmitter,
-	Broker
-	) {
+module.exports = function (logger, inherits, EventEmitter, Broker) {
 
 	// options: {
 	//   brokers: [

@@ -1,9 +1,8 @@
-module.exports = function (
-	logger,
-	inherits,
-	EventEmitter,
-	Client) {
+module.exports = function (logger, inherits, EventEmitter, Client) {
 
+	// A Broker represents a Kafka server. It attempts to maintain a connection
+	// to the server until it is 'destroy'ed. If the connection is dropped,
+	// the Broker will attempt to reconnect, backing off exponentially on failure.
 	function Broker(id, options) {
 		this.id = id
 		this.client = Client.nil
@@ -68,6 +67,8 @@ module.exports = function (
 			Math.random() * Math.pow(2, attempt) * 10
 		)
 	}
+
+	// Event handlers
 
 	function clientConnect() {
 		logger.info('broker connected', this.id)

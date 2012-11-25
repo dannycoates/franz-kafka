@@ -21,12 +21,12 @@ module.exports = function (logger) {
 	var Message = require('./message')(zlib, snappy, crc32)
 	var RequestHeader = require('./request-header')()
 	var ResponseHeader = require('./response-header')(inherits, State)
-	var FetchBody = require('./fetch-body')(inherits, State, Message)
-	var OffsetsBody = require('./offsets-body')(inherits, State, int53)
+	var FetchResponse = require('./fetch-response')(inherits, State, Message)
+	var OffsetsResponse = require('./offsets-response')(inherits, State, int53)
 	var Response = require('./response')(logger, State, ResponseHeader)
 	var Receiver = require('./receiver')(logger, inherits, EventEmitter, State)
-	var FetchRequest = require('./fetch-request')(RequestHeader, Response, FetchBody, int53)
-	var OffsetsRequest = require('./offsets-request')(RequestHeader, Response, OffsetsBody, int53)
+	var FetchRequest = require('./fetch-request')(RequestHeader, Response, FetchResponse, int53)
+	var OffsetsRequest = require('./offsets-request')(RequestHeader, Response, OffsetsResponse, int53)
 	var ProduceRequest = require('./produce-request')(inherits, RequestHeader, Message, State)
 	var Client = require('./client')(
 		logger,

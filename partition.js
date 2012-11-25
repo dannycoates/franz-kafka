@@ -1,5 +1,12 @@
 module.exports = function (logger, inherits, EventEmitter, Broker) {
 
+	// A Partition represents the location of messages for a Topic.
+	// Partitions may be 'readable' and/or 'writable'.
+	//
+	// A readable Partition repeatedly fetches new messages from the server
+	// for consumption. The fetch loop is controlled with 'pause' and 'resume'.
+	//
+	// A writable Partition will write messages to the server for production.
 	function Partition(topic, broker, id) {
 		this.topic = topic
 		this.broker = broker
@@ -104,8 +111,6 @@ module.exports = function (logger, inherits, EventEmitter, Broker) {
 		return this.readable
 	}
 
-	Partition.nil = new Partition({ minFetchDelay: 0 }, Broker.nil, -1)
-
 	function exponentialBackoff(attempt, delay) {
 		return Math.floor(
 			Math.random() * Math.pow(2, attempt) * 10 + delay
@@ -161,6 +166,8 @@ module.exports = function (logger, inherits, EventEmitter, Broker) {
 		this.broker = Broker.nil
 		this.emit('destroy', this)
 	}
+
+	Partition.nil = new Partition({ minFetchDelay: 0 }, Broker.nil, -1)
 
 	return Partition
 }

@@ -1,7 +1,9 @@
-module.exports = function (
-	inherits,
-	EventEmitter) {
+module.exports = function (inherits, EventEmitter) {
 
+	// A MessageBuffer holds messages for batch writing until either 'batchSize'
+	// messages accumulate or 'queueTime' ms has passed since the last write.
+	// If no partitions are ready for the 'write' the MessageBuffer will buffer
+	// an unbounded number of messages until a partition is ready.
 	function MessageBuffer(partitions, batchSize, queueTime) {
 		this.partitions = partitions
 		this.batchSize = batchSize

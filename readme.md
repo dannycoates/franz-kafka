@@ -147,8 +147,8 @@ var foo = kafka.topic('foo', {
 	batchSize: 200,        // defaults to the kafka.batchSize
 	queueTime: 5000,       // defaults to the kafka.queueTime
 	partitions: {
-		consume: ['0-0:0'] // array of strings with the form 'brokerId-partitionId:startOffset'
-		produce: ['0:1']   // array of strings with the form 'brokerId:partitionCount'
+		consume: ['0-0:0'],  // array of strings with the form 'brokerId-partitionId:startOffset'
+		produce: ['0:1']     // array of strings with the form 'brokerId:partitionCount'
 	}
 })
 ```

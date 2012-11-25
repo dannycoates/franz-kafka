@@ -61,9 +61,10 @@ module.exports = function (
 	}
 	inherits(Topic, Stream)
 
-	//emit end
-	//emit close
+	//TODO emit end
+	//TODO emit close
 
+	// a partition is ready for writing
 	function partitionsReady() {
 		if(this.produceBuffer.flush()) {
 			logger.info('drain', this.name)
@@ -71,6 +72,11 @@ module.exports = function (
 		}
 	}
 
+	// Emits a 'data' event for each message of a fetch response.
+	// If the stream is paused, the message is added to bufferedMessages,
+	// which is flushed when the stream is resumed.
+	//
+	// payloads: an array of Buffers
 	function emitMessages(payloads) {
 		for (var i = 0; i < payloads.length; i++) {
 			var data = payloads[i]
@@ -90,6 +96,11 @@ module.exports = function (
 		}
 	}
 
+	// Emits the offset of the given messages, then unpacks and emits the
+	// message data
+	//
+	// partition: a Partition object
+	// messages: an Array of Message objects
 	Topic.prototype.parseMessages = function (partition, messages) {
 		this.emit('offset', partition.name, partition.offset)
 		for (var i = 0; i < messages.length; i++) {
@@ -97,6 +108,9 @@ module.exports = function (
 		}
 	}
 
+	// Emits the messages that were buffered while the stream was paused
+	//
+	// returns: boolean pause state of this topic
 	Topic.prototype._flushBufferedMessages = function () {
 		this.paused = false
 		while(!this.paused && this.bufferedMessages.length > 0) {
@@ -110,8 +124,11 @@ module.exports = function (
 		return this.paused || this.bufferedMessages.length > 0
 	}
 
-	// Partitions
-
+	// Get or create a Partition object.
+	//
+	// name: string in the form of brokerId-partitionId
+	//       ex. '12-6'
+	// returns: a Partition object
 	Topic.prototype.partition = function (name) {
 		var partition = this.partitions.get(name)
 		if (!partition) {

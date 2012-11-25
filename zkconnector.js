@@ -46,6 +46,12 @@ module.exports = function (
 		this.zk.on('consumers-changed', this._rebalance.bind(this))
 	}
 
+	function topicObject(name) { return this.interestedTopics[name] }
+
+	ZKConnector.prototype._topics = function () {
+		return Object.keys(this.interestedTopics).map(topicObject.bind(this))
+	}
+
 	ZKConnector.prototype._brokersChanged = function (brokerIds) {
 		var self = this
 		async.forEachSeries(
@@ -97,13 +103,19 @@ module.exports = function (
 	}
 
 	ZKConnector.prototype._rebalance = function () {
-		var self = this
 		logger.info('rebalancing')
 		async.waterfall([
 			function (next) {
-				self.consumer.stop()
-				self.consumer.drain(next)
-			},
+				async.forEach(
+					this._topics(),
+					function (topic, done) {
+						topic.stop()
+						topic.drain(done)
+					},
+					function (err) {
+						next()
+					}
+			}.bind(this),
 			function (next) {
 				self.zk.getTopicPartitions(self.interestedTopics, self.consumer, next)
 			},

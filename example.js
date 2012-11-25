@@ -4,7 +4,7 @@ var fs = require('fs')
 var file = fs.createWriteStream('./test.txt')
 
 var kafka = new Kafka({
-	zookeeper: 'localhost:2181',
+	//zookeeper: 'localhost:2181',
 	brokers: [{
 		id: 0,
 		host: 'localhost',
@@ -24,10 +24,10 @@ file.once('open', function () {
 	kafka.connect(function () {
 
 		var baz = kafka.topic('bazzz', {
-			// partitions: {
-			// 	consume: ['0-0'],
-			// 	produce: ['0:1']
-			// }
+			partitions: {
+				consume: ['0-0'],
+				produce: ['0:1']
+			}
 		})
 
 		baz.pipe(file)
