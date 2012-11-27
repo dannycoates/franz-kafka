@@ -1,6 +1,6 @@
 {
   "name": "franz-kafka",
-  "version": "0.7.0",
+  "version": "0.7.2",
   "description": "Kafka Client http://incubator.apache.org/kafka/",
   "main": "index.js",
   "dependencies" : {
@@ -12,9 +12,6 @@
   "optionalDependencies" : {
     "snappy" : "*",
     "zookeeper" : "*"
-  },
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",

@@ -114,7 +114,7 @@ module.exports = function (
 					},
 					function (err) {
 						next()
-					}
+					})
 			}.bind(this),
 			function (next) {
 				self.zk.getTopicPartitions(self.interestedTopics, self.consumer, next)
