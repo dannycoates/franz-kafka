@@ -11,7 +11,7 @@
   },
   "optionalDependencies" : {
     "snappy" : "*",
-    "zookeeper" : "*"
+    "zkjs" : "*"
   },
   "repository": {
     "type": "git",

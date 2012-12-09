@@ -41,12 +41,12 @@ module.exports = function (options) {
 
 	if (options.zookeeper) {
 		try {
-			var ZooKeeper = require('zookeeper')
+			var ZooKeeper = require('zkjs')
 			var ZK = require('./zk')(logger, async, inherits, EventEmitter, ZooKeeper)
 			var ZKConnector = require('./zkconnector')(logger, async, inherits, EventEmitter, ZK, Broker)
 		}
 		catch (e) {
-			logger.error('node-zookeeper could not be loaded')
+			logger.error('zkjs could not be loaded')
 			throw e
 		}
 	}
