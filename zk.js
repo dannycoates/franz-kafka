@@ -27,8 +27,21 @@ module.exports = function (
 				if (err) {
 					return self.emit('error', err)
 				}
-				self.emit('connect')
+				self.ensureBrokerRoots(self.emit.bind(self, 'connect'))
 			}
+		)
+	}
+
+	ZK.prototype.ensureBrokerRoots = function (cb) {
+		async.forEach(
+			[
+				'/brokers/ids',
+				'/brokers/topics'
+			],
+			function (root, next) {
+				this.zk.mkdirp(root, next)
+			}.bind(this),
+			cb
 		)
 	}
 
@@ -68,7 +81,7 @@ module.exports = function (
 	ZK.prototype._topicsChanged = function (err, topics) {
 		var self = this
 		async.forEachSeries(
-			topics || [],
+			topics,
 			function (topic, next) {
 				self._getTopicBrokers(topic, next)
 			},
@@ -90,7 +103,7 @@ module.exports = function (
 		var self = this
 		if (brokerIds) {
 			async.forEachSeries(
-				brokerIds || [],
+				brokerIds,
 				function (id, next) {
 					self._getPartitionCount(name, id, next)
 				},
@@ -116,52 +129,20 @@ module.exports = function (
 	}
 
 	// TODO indeed
-	/*
-	ZK.prototype._create = function (path, data, options, cb) {
-		this.zk.create(path, data, options,
-			function (err, stat) {
-				switch (rc) {
-					case ZooKeeper.ZOK:
-						cb(null, stat)
-						break;
-					case ZooKeeper.ZNODEEXISTS:
-						cb(null, path)
-						break;
-					default:
-						cb(new Error(rc))
-						break;
-				}
-			}
-		)
-	}
+	//*
 
-	ZK.prototype._createOrReplace = function (path, data, options, cb) {
+	ZK.prototype._createOrReplace = function (path, data, flags, cb) {
 		var self = this
 		async.waterfall([
 			function (next) {
-				self.zk.a_exists(path, false,
-					function (rc, err, stat) {
-						logger.info('exists', path, 'stat', stat)
-						next(err, stat)
-					}
-				)
+				self.zk.exists(path, next)
 			},
-			function (stat, next) {
-				if (stat) {
-					self.zk.a_set(path, data, stat.version,
-						function (rc, err, stat) {
-							logger.info('set', path, 'stat', stat)
-							next(err, stat)
-						}
-					)
+			function (exists, stat, next) {
+				if (exists) {
+					self.zk.set(path, data, stat.version, next)
 				}
 				else {
-					self.zk.a_create(path, data, options,
-						function (rc, err, stat) {
-							logger.info('create', path, 'stat', stat)
-							next(err, stat)
-						}
-					)
+					self.zk.create(path, data, flags, next)
 				}
 			}
 			],
@@ -210,7 +191,7 @@ module.exports = function (
 				self._createOrReplace(
 					'/consumers/' + consumer.groupId + '/ids/' + consumer.consumerId,
 					toTopicString(topics),
-					ZooKeeper.ZOO_EPHEMERAL,
+					self.zk.create.EPHEMERAL,
 					next
 				)
 			}
@@ -221,7 +202,7 @@ module.exports = function (
 			}
 		)
 	}
-	*/
+
 	ZK.prototype.getTopicPartitions = function (topics, consumer, cb) {
 		//TODO
 		throw new Error("Not Implemented")
