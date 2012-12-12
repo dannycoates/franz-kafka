@@ -8,7 +8,7 @@ A node client for [Kafka](http://incubator.apache.org/kafka/)
 var Kafka = require('franz-kafka')
 
 var kafka = new Kafka({
-	zookeeper: 'localhost:2181',
+	zookeeper: ['localhost:2181'],
 	compression: 'gzip',
 	queueTime: 2000,
 	batchSize: 200,
@@ -270,7 +270,7 @@ To produce using ZooKeeper use the `zookeeper` option in the Kafka constructor.
 
 ```js
 var kafka = new Kafka({
-	zookeeper: 'localhost:2181' // the host:port of zookeeper
+	zookeeper: ['localhost:2181'] // array of 'host:port' zookeeper nodes
 })
 
 kafka.connect(function () {
