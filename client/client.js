@@ -75,7 +75,8 @@ module.exports = function (
 		logger.info(
 			'fetching', topic.name,
 			'broker', this.id,
-			'partition', partition.id
+			'partition', partition.id,
+			'offset', partition.offset
 		)
 		return this._send(new FetchRequest(topic, partition), cb)
 	}

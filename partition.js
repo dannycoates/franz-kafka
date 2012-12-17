@@ -21,6 +21,7 @@ module.exports = function (logger, inherits, EventEmitter, Broker) {
 		this.readable = null
 		this.writable = null
 		this.fetcher = fetch.bind(this)
+		this.pending = false
 		this.onFetchResponse = fetchResponse.bind(this)
 		this.onBrokerReady = brokerReady.bind(this)
 		this.onBrokerDestroy = brokerDestroy.bind(this)
@@ -69,7 +70,9 @@ module.exports = function (logger, inherits, EventEmitter, Broker) {
 		)
 		this.paused = false
 		this.flush()
-		this.fetcher()
+		if (!this.paused && !this.pending) {
+			this.fetcher()
+		}
 	}
 
 	Partition.prototype.pause = function () {
@@ -140,7 +143,9 @@ module.exports = function (logger, inherits, EventEmitter, Broker) {
 	}
 
 	function fetch() {
+		clearTimeout(this.timer)
 		if (this.isReady()) {
+			this.pending = true
 			this.broker.fetch(
 				this.topic,
 				this,
