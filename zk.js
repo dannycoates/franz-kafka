@@ -119,7 +119,7 @@ module.exports = function (
 		self.zk.get(
 			'/brokers/topics/' + name + '/' + id,
 			self._getPartitionCount.bind(self, name, id, noop),
-			function (rc, err, stat, data) {
+			function (err, data, stat) {
 				if (data) {
 					self.emit('broker-topic-partition', id, name, +(data.toString()))
 				}
