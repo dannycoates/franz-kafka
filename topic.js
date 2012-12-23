@@ -56,6 +56,14 @@ module.exports = function (
 			this.addWritablePartitions(options.partitions.produce)
 			this.addReadablePartitions(options.partitions.consume)
 		}
+		else {
+			// create a partition to start with
+			// TODO: which broker to pick?
+			var b = this.kafka.broker()
+			if (b) {
+				this.addWritablePartitions([b.id + ':1'])
+			}
+		}
 
 		Stream.call(this)
 	}

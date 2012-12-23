@@ -27,16 +27,21 @@ module.exports = function (
 				if (err) {
 					return self.emit('error', err)
 				}
-				self.ensureBrokerRoots(self.emit.bind(self, 'connect'))
+				self.ensureRoots(self.emit.bind(self, 'connect'))
 			}
 		)
 	}
 
-	ZK.prototype.ensureBrokerRoots = function (cb) {
+	ZK.prototype.close = function () {
+		this.zk.close()
+	}
+
+	ZK.prototype.ensureRoots = function (cb) {
 		async.forEach(
 			[
 				'/brokers/ids',
-				'/brokers/topics'
+				'/brokers/topics',
+				'/consumers'
 			],
 			function (root, next) {
 				this.zk.mkdirp(root, next)
@@ -71,6 +76,7 @@ module.exports = function (
 	}
 
 	ZK.prototype.subscribeToTopics = function () {
+		logger.info('zk get topics')
 		this.zk.getChildren(
 			'/brokers/topics',
 			this.subscribeToTopics.bind(this),
@@ -80,6 +86,7 @@ module.exports = function (
 
 	ZK.prototype._topicsChanged = function (err, topics) {
 		var self = this
+		logger.info('zk topics', topics)
 		async.forEachSeries(
 			topics,
 			function (topic, next) {
@@ -92,6 +99,7 @@ module.exports = function (
 	}
 
 	ZK.prototype._getTopicBrokers = function (name, done) {
+		logger.info('zk get', name, 'children')
 		this.zk.getChildren(
 			'/brokers/topics/' + name,
 			this._getTopicBrokers.bind(this, name, noop),
@@ -100,6 +108,7 @@ module.exports = function (
 	}
 
 	ZK.prototype._getBrokersPartitions = function (name, done, err, brokerIds) {
+		logger.info('zk topic', name, 'brokers', brokerIds)
 		var self = this
 		if (brokerIds) {
 			async.forEachSeries(
@@ -116,12 +125,15 @@ module.exports = function (
 
 	ZK.prototype._getPartitionCount = function (name, id, done) {
 		var self = this
+		logger.info('zk get', name, 'broker', id)
 		self.zk.get(
 			'/brokers/topics/' + name + '/' + id,
 			self._getPartitionCount.bind(self, name, id, noop),
 			function (err, data, stat) {
 				if (data) {
-					self.emit('broker-topic-partition', id, name, +(data.toString()))
+					var pcount = +(data.toString())
+					logger.info('zk topic', name, 'broker', id, 'partitions', pcount)
+					self.emit('broker-topic-partition', id, name, pcount)
 				}
 				done()
 			}

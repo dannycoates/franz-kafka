@@ -94,6 +94,11 @@ module.exports = function (
 		}
 	}
 
+	Kafka.prototype.close = function () {
+		this.allBrokers.close()
+		this.connector.close()
+	}
+
 	function setTopicOptions(topicOptions, defaults) {
 		topicOptions = topicOptions || {}
 		var keys = Object.keys(defaults)
@@ -149,6 +154,9 @@ module.exports = function (
 	// id: the number of the broker in it's configuration
 	// returns: a Broker object or undefined
 	Kafka.prototype.broker = function (id) {
+		if (id === undefined) {
+			return this.allBrokers.all()[0]
+		}
 		return this.allBrokers.get(id)
 	}
 

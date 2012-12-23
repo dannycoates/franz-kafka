@@ -31,5 +31,9 @@ module.exports = function (logger, inherits, EventEmitter, Broker) {
 		// noop
 	}
 
+	StaticConnector.prototype.close = function () {
+
+	}
+
 	return StaticConnector
 }

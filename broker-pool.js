@@ -35,5 +35,11 @@ module.exports = function (logger, inherits, EventEmitter) {
 		return this.brokers
 	}
 
+	BrokerPool.prototype.close = function () {
+		while (this.brokers.length) {
+			this.remove(this.brokers[this.brokers.length - 1])
+		}
+	}
+
 	return BrokerPool
 }
