@@ -18,6 +18,7 @@ module.exports = function (
 		this.receiver = null
 
 		this.connection = net.connect(options)
+		this.connection.setKeepAlive(true, 1000 * 60 * 5)
 		this.onConnectionConnect = connectionConnect.bind(this)
 		this.onConnectionEnd = connectionEnd.bind(this)
 		this.onConnectionDrain = connectionDrain.bind(this)

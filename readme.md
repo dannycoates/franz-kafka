@@ -15,7 +15,7 @@ var kafka = new Kafka({
 	logger: console
 })
 
-kafka.on('connect', function () {
+kafka.connect(function () {
 
 	// topics are Streams
 	var foo = kafka.topic('foo')

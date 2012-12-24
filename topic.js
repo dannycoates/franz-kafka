@@ -27,6 +27,8 @@ module.exports = function (
 	//   }
 	// }
 	function Topic(name, kafka, options) {
+		options = options || {}
+		options.partitions = options.partitions || {}
 		this.name = name || ''
 		this.kafka = kafka
 		this.encoding = null
@@ -42,7 +44,9 @@ module.exports = function (
 
 		this.partitions = new PartitionSet()
 		this.onPartitionsReady = partitionsReady.bind(this)
+		this.onPartitionMessages = this.parseMessages.bind(this)
 		this.partitions.on('ready', this.onPartitionsReady)
+		this.partitions.on('messages', this.onPartitionMessages)
 
 		this.produceBuffer = new MessageBuffer(
 			this.partitions,
@@ -52,9 +56,12 @@ module.exports = function (
 		this.onError = this.error.bind(this)
 		this.produceBuffer.on('error', this.onError)
 
-		if (options.partitions) {
-			this.addWritablePartitions(options.partitions.produce)
+		if (options.partitions.consume) {
 			this.addReadablePartitions(options.partitions.consume)
+		}
+
+		if (options.partitions.produce) {
+			this.addWritablePartitions(options.partitions.produce)
 		}
 		else {
 			// create a partition to start with
@@ -201,6 +208,11 @@ module.exports = function (
 		return false
 	}
 
+	Topic.prototype.resetConsumer = function (cb) {
+		this.partitions.stopConsuming()
+		this.partitions.drain(cb)
+	}
+
 	// Readable Stream
 
 	Topic.prototype.pause = function () {
@@ -219,7 +231,7 @@ module.exports = function (
 	}
 
 	Topic.prototype.destroy = function () {
-		this.partitions.stop()
+		this.resetConsumer(function () {})
 	}
 
 	Topic.prototype.setEncoding = function (encoding) {

@@ -63,8 +63,7 @@ module.exports = function (inherits, EventEmitter) {
 		if (this.partitions.isReady() && this.messages.length > 0) {
 			var batches = batchify(this.messages, this.batchSize)
 			for (var i = 0; i < batches.length; i++) {
-				var partition = this.partitions.nextWritable()
-				sent = partition.write(batches[i], this.onProduceResponse)
+				this.partitions.write(batches[i], this.onProduceResponse)
 			}
 			this.messages = []
 		}

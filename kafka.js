@@ -97,6 +97,12 @@ module.exports = function (
 	Kafka.prototype.close = function () {
 		this.allBrokers.close()
 		this.connector.close()
+		var topicNames = Object.keys(this.topics)
+		for (var i = 0; i < topicNames.length; i++) {
+			var name = topicNames[i]
+			this.topics[name].destroy()
+			delete this.topics[name]
+		}
 	}
 
 	function setTopicOptions(topicOptions, defaults) {

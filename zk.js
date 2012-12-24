@@ -10,7 +10,8 @@ module.exports = function (
 	// A feable attempt a wrangling the horrible ZooKeeper API
 	function ZK(options) {
 		this.zk = new ZooKeeper({
-			hosts: options.zookeeper
+			hosts: options.zookeeper,
+			logger: logger
 		})
 		this.zk.once(
 			'expired',
@@ -177,7 +178,6 @@ module.exports = function (
 				if (err) {
 					logger.error('create consumer roots', err)
 				}
-				logger.info('created roots')
 				cb(err)
 			}
 		)
@@ -192,16 +192,16 @@ module.exports = function (
 		return JSON.stringify(ts)
 	}
 
-	ZK.prototype.registerTopics = function (topics, consumer, cb) {
+	ZK.prototype.registerTopics = function (topics, kafka, cb) {
 		var self = this
-		logger.info('registerTopics')
+		logger.info('register', topics)
 		async.series([
 			function (next) {
-				self._createConsumerRoots(consumer.groupId, next)
+				self._createConsumerRoots(kafka.groupId, next)
 			},
 			function (next) {
 				self._createOrReplace(
-					'/consumers/' + consumer.groupId + '/ids/' + consumer.consumerId,
+					'/consumers/' + kafka.groupId + '/ids/' + kafka.consumerId,
 					toTopicString(topics),
 					self.zk.create.EPHEMERAL,
 					next
@@ -209,7 +209,7 @@ module.exports = function (
 			}
 			],
 			function (err) {
-				logger.info('registeredTopics')
+				logger.info('registered')
 				cb(err)
 			}
 		)
@@ -217,8 +217,9 @@ module.exports = function (
 
 	ZK.prototype.getTopicPartitions = function (topics, consumer, cb) {
 		//TODO
-		throw new Error("Not Implemented")
-		cb(null, [{topic: topics['bazzz'], partitions: ['0-0:0']}])
+		return cb(null, [])
+		//return cb(null, [{topic: 'foo', partitions: ['0-0','0-1','1-0','1-1']}])
+		//cb(null, [{topic: topics['bazzz'], partitions: ['0-0:0']}])
 	}
 
 	return ZK

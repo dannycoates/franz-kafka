@@ -105,25 +105,32 @@ module.exports = function (
 		logger.info('rebalancing')
 		async.waterfall([
 			function (next) {
-				async.forEach(
+				async.forEachSeries(
 					this._topics(),
 					function (topic, done) {
-						topic.stop()
-						topic.drain(done)
+						logger.info('draining', topic.name)
+						topic.resetConsumer(done)
 					},
 					function (err) {
+						logger.info('drained')
 						next()
 					})
 			}.bind(this),
 			function (next) {
-				self.zk.getTopicPartitions(self.interestedTopics, self.consumer, next)
-			},
+				this.zk.getTopicPartitions(this.interestedTopics, this.kafka, next)
+			}.bind(this),
 			function (topicPartitions) {
 				for(var i = 0; i < topicPartitions.length; i++) {
 					var tp = topicPartitions[i]
-					self.consumer.consume(tp.topic, tp.partitions)
+					var topic = this.kafka.topic(tp.topic)
+					logger.info(
+						'consume', tp.topic,
+						'partitions', tp.partitions
+					)
+					topic.addReadablePartitions(tp.partitions)
+					topic.resume()
 				}
-			}
+			}.bind(this)
 		])
 	}
 
@@ -132,7 +139,7 @@ module.exports = function (
 			var self = this
 			this.zk.registerTopics(
 				this.interestedTopics,
-				this.consumer,
+				this.kafka,
 				function () {
 					self.rebalance()
 				}

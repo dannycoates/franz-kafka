@@ -1,124 +1,108 @@
-module.exports = function (logger, inherits, EventEmitter) {
+module.exports = function (logger, inherits, EventEmitter, Consumer, Producer) {
 
 	// A PartitionSet contains all of the known Partitions (for a Topic)
 	// It tracks which partitions are 'readable' and 'writable'
 	function PartitionSet() {
-		this.partitionsByName = {}
-		this.partitions = []
-		this.current = 0
+		this.partitions = {}
+		this.consumer = new Consumer()
+		this.producer = new Producer()
+
+		this.onConsumerMessages = consumerMessages.bind(this)
+		this.onConsumerError = consumerError.bind(this)
 		this.onReadableChanged = readableChanged.bind(this)
 		this.onWritableChanged = writableChanged.bind(this)
 		this.onPartitionReady = partitionReady.bind(this)
 		this.onPartitionDestroy = partitionDestroy.bind(this)
-		this.readables = {}
-		this.writables = {}
+
+		this.consumer.on('messages', this.onConsumerMessages)
+		this.consumer.on('error', this.onConsumerError)
 		EventEmitter.call(this)
 	}
 	inherits(PartitionSet, EventEmitter)
 
 	PartitionSet.prototype.get = function (name) {
-		return this.partitionsByName[name]
+		return this.partitions[name]
 	}
 
 	PartitionSet.prototype.add = function (partition) {
-		if (this.partitions.indexOf(partition) < 0) {
+		if(!this.partitions[partition.name]) {
 			partition.on('writable', this.onWritableChanged)
 			partition.on('readable', this.onReadableChanged)
 			partition.on('ready', this.onPartitionReady)
 			partition.on('destroy', this.onPartitionDestroy)
-			this.partitionsByName[partition.name] = partition
-			this.partitions.push(partition)
+			this.partitions[partition.name] = partition
 			logger.info('added partition', partition.name)
 		}
 	}
 
 	PartitionSet.prototype.remove = function (partition) {
-		var i = this.partitions.indexOf(partition)
-		if (i >= 0) {
-			var p = this.partitions[i]
-			var name = p.name
-			p.removeListener('writable', this.onWritableChanged)
-			p.removeListener('readable', this.onReadableChanged)
-			p.removeListener('ready', this.onPartitionReady)
-			p.removeListener('destroy', this.onPartitionDestroy)
-			delete this.partitionsByName[name]
-			delete this.readables[name]
-			delete this.writables[name]
-			this.partitions.splice(i, 1)
-			logger.info('removed partition', name)
-		}
+		this.consumer.remove(partition)
+		this.producer.remove(partition)
+		partition.removeListener('writable', this.onWritableChanged)
+		partition.removeListener('readable', this.onReadableChanged)
+		partition.removeListener('ready', this.onPartitionReady)
+		partition.removeListener('destroy', this.onPartitionDestroy)
+		delete this.partitions[partition.name]
+		logger.info('removed partition', partition.name)
 	}
-
-	PartitionSet.prototype.next = function () {
-		this.current = (this.current + 1) % this.partitions.length
-		return this.partitions[this.current]
-	}
-
-	PartitionSet.prototype.all = function () {
-		return this.partitions
-	}
-
-	function isReadyAndWritable(p) { return p.isReady() && p.isWritable() }
 
 	PartitionSet.prototype.isReady = function () {
-		return this.partitions.some(isReadyAndWritable)
+		return this.producer.isReady()
 	}
 
-	PartitionSet.prototype.nextWritable = function () {
-		var partition = null
-		for (var i = 0; i < this.partitions.length; i++) {
-			partition = this.next()
-			if (isReadyAndWritable(partition)) {
-				return partition
-			}
-		}
-		return partition
-	}
-
-	PartitionSet.prototype.length = function () {
-		return this.partitions.length
-	}
-
-	function readablePartition(p) { return p.isReadable() }
-	PartitionSet.prototype.readable = function () {
-		return this.partitions.filter(readablePartition)
-	}
-
-	function pausePartition(p) { p.pause() }
 	PartitionSet.prototype.pause = function () {
-		this.readable().forEach(pausePartition)
+		this.consumer.pause()
 	}
 
-	function resumePartition(p) { p.resume() }
 	PartitionSet.prototype.resume = function () {
-		this.readable().forEach(resumePartition)
+		this.consumer.resume()
 	}
 
-	function stopPartition(p) { p.stop() }
-	PartitionSet.prototype.stop = function () {
-		this.readable().forEach(stopPartition)
+	PartitionSet.prototype.stopConsuming = function () {
+		var names = Object.keys(this.partitions)
+		for (var i = 0; i < names.length; i++) {
+			var partition = this.partitions[names[i]]
+			partition.isReadable(false)
+		}
+	}
+
+	PartitionSet.prototype.drain = function (cb) {
+		this.consumer.drain(cb)
+	}
+
+	PartitionSet.prototype.write = function (messages, cb) {
+		this.producer.write(messages, cb)
 	}
 
 	// Event handlers
 
+	function consumerMessages(partition, messages) {
+		this.emit('messages', partition, messages)
+	}
+
+	function consumerError(err) {
+
+	}
+
 	function readableChanged(partition) {
 		if (partition.isReadable()) {
-			this.readables[partition.name] = partition
+			this.consumer.add(partition)
 		}
 		else {
-			delete this.readables[partition.name]
+			this.consumer.remove(partition)
 		}
 	}
 
 	function writableChanged(partition) {
 		if (partition.isWritable()) {
-			this.writables[partition.name] = partition
+			this.producer.add(partition)
+			// TODO: emit less
 			if (this.isReady()) {
 				this.emit('ready')
 			}
 		}
 		else {
-			delete this.writables[partition.name]
+			this.producer.remove(partition)
 		}
 	}
 
