@@ -24,8 +24,10 @@ module.exports = function (
 		this.kafka = kafka
 		this.brokers = brokers
 		this.options = options
-		this.zk = new ZK(options)
+		this.zk = new ZK(kafka.groupId, kafka.consumerId, options)
 		this.hasPendingTopics = false
+		this.isConsuming = false
+		this.rebalancing = false
 		this.interestedTopics = {}
 		this.rebalance = rebalance.bind(this)
 		this.registerTopics = registerTopics.bind(this)
@@ -46,13 +48,13 @@ module.exports = function (
 		})
 		this.zk.on('brokers', this.onBrokersChanged)
 		this.zk.on('broker-topic-partition', this.onBrokerTopicPartition)
-		this.zk.on('consumers-changed', this.rebalance)
+		this.zk.on('consumers', this.rebalance)
 	}
 
 	ZKConnector.prototype.close = function () {
 		this.zk.removeListener('brokers', this.onBrokersChanged)
 		this.zk.removeListener('broker-topic-partition', this.onBrokerTopicPartition)
-		this.zk.removeListener('consumers-changed', this.rebalance)
+		this.zk.removeListener('consumers', this.rebalance)
 		this.zk.close()
 	}
 
@@ -93,7 +95,7 @@ module.exports = function (
 	}
 
 	ZKConnector.prototype.register = function (topic) {
-		return false // TODO enable when rebalance works
+		//return false // TODO enable when rebalance works
 		if (!this.interestedTopics[topic.name]) {
 			this.hasPendingTopics = true
 			this.interestedTopics[topic.name] = topic
@@ -102,7 +104,11 @@ module.exports = function (
 	}
 
 	function rebalance() {
+		if (this.rebalancing) {
+			return
+		}
 		logger.info('rebalancing')
+		this.rebalancing = true
 		async.waterfall([
 			function (next) {
 				async.forEachSeries(
@@ -117,29 +123,39 @@ module.exports = function (
 					})
 			}.bind(this),
 			function (next) {
+				this.zk.releasePartitionOwnership(next)
+			}.bind(this),
+			function (next) {
 				this.zk.getTopicPartitions(this.interestedTopics, this.kafka, next)
 			}.bind(this),
-			function (topicPartitions) {
-				for(var i = 0; i < topicPartitions.length; i++) {
-					var tp = topicPartitions[i]
-					var topic = this.kafka.topic(tp.topic)
+			function (topicPartitions, next) {
+				var topicNames = Object.keys(topicPartitions)
+				for(var i = 0; i < topicNames.length; i++) {
+					var name = topicNames[i]
+					var partitions = topicPartitions[name]
+					var topic = this.kafka.topic(name)
 					logger.info(
-						'consume', tp.topic,
-						'partitions', tp.partitions
+						'consume', name,
+						'partitions', partitions
 					)
-					topic.addReadablePartitions(tp.partitions)
+					topic.addReadablePartitions(partitions)
 					topic.resume()
 				}
+				this.rebalancing = false
+				next()
 			}.bind(this)
 		])
 	}
 
 	function registerTopics() {
+		if (!this.isConsuming) {
+			this.isConsuming = true
+			return this.zk.registerTopicsAndSubscribe(this.interestedTopics)
+		}
 		if (this.hasPendingTopics) {
 			var self = this
 			this.zk.registerTopics(
 				this.interestedTopics,
-				this.kafka,
 				function () {
 					self.rebalance()
 				}
@@ -171,6 +187,9 @@ module.exports = function (
 	function setPartitionCount(brokerId, topicName, count) {
 		var topic = this.kafka.topic(topicName)
 		topic.addWritablePartitions([brokerId + ':' + count])
+		// if (this.isConsuming) {
+		// 	this.rebalance()
+		// }
 	}
 
 	return ZKConnector

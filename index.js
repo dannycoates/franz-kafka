@@ -3,6 +3,7 @@ var os = require('os')
 var async = require('async')
 var inherits = require('util').inherits
 var EventEmitter = require('events').EventEmitter
+var path = require('path')
 var Stream = require('stream')
 
 var RingList = require('./ring-list')()
@@ -46,7 +47,7 @@ module.exports = function (options) {
 	if (options.zookeeper) {
 		try {
 			var ZooKeeper = require('zkjs')
-			var ZK = require('./zk')(logger, async, inherits, EventEmitter, ZooKeeper)
+			var ZK = require('./zk')(logger, async, inherits, EventEmitter, path, ZooKeeper)
 			var ZKConnector = require('./zkconnector')(logger, async, inherits, EventEmitter, ZK, Broker)
 		}
 		catch (e) {

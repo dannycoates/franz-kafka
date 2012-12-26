@@ -95,8 +95,8 @@ module.exports = function (
 	}
 
 	Kafka.prototype.close = function () {
-		this.allBrokers.close()
 		this.connector.close()
+		this.allBrokers.close()
 		var topicNames = Object.keys(this.topics)
 		for (var i = 0; i < topicNames.length; i++) {
 			var name = topicNames[i]

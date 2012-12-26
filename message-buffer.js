@@ -30,7 +30,7 @@ module.exports = function (inherits, EventEmitter) {
 		if (this.messages.length >= this.batchSize) {
 			return this.send()
 		}
-		if (!this.timer) {
+		if (this.messages.length > 0 && !this.timer) {
 			this.timer = setTimeout(this.send, this.queueTime)
 		}
 		return true
@@ -60,6 +60,7 @@ module.exports = function (inherits, EventEmitter) {
 
 	function send() {
 		var sent = false
+		this.clearTimer()
 		if (this.partitions.isReady() && this.messages.length > 0) {
 			var batches = batchify(this.messages, this.batchSize)
 			for (var i = 0; i < batches.length; i++) {
@@ -67,7 +68,6 @@ module.exports = function (inherits, EventEmitter) {
 			}
 			this.messages = []
 		}
-		this.clearTimer()
 		return sent
 	}
 
