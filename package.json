@@ -1,6 +1,6 @@
 {
   "name": "franz-kafka",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "description": "Kafka Client http://incubator.apache.org/kafka/",
   "main": "index.js",
   "dependencies" : {
