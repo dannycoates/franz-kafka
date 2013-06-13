@@ -1,12 +1,12 @@
 {
   "name": "franz-kafka",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "description": "Kafka Client http://incubator.apache.org/kafka/",
   "main": "index.js",
   "dependencies" : {
     "int53": "*",
     "async": "*",
-    "readable-stream": "git://github.com/dannycoates/readable-stream.git#e7482f16",
+    "readable-stream": "*",
     "buffer-crc32": "*"
   },
   "optionalDependencies" : {
