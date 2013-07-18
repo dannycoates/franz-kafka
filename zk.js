@@ -403,7 +403,7 @@ module.exports = function (
 			consumerTopicPartitions[consumerId] = {}
 
 			for (var j = 0; j < topicNames.length; j++) {
-				var topicName = topicNames[i]
+				var topicName = topicNames[j]
 				var consumerTopicCount = consumer[topicName] || 0
 
 				if (consumerTopicCount > 0) {
