@@ -10,11 +10,21 @@ module.exports = function (
 
 	// A feable attempt a wrangling the horrible ZooKeeper API
 	function ZK(groupId, consumerId, options) {
-		EventEmitter.call(this)
-		this.zk = new ZooKeeper({
-			hosts: options.zookeeper,
-			logger: logger
-		})
+		EventEmitter.call(this);
+        var zkOptions = {};
+        if(typeof options.zookeeper === "string") {
+            zkOptions.hosts = options.zookeeper;
+        }
+        else {
+            for(var name in options.zookeeper) {
+                if(options.zookeeper.hasOwnProperty(name)) {
+                    zkOptions[name] = options.zookeeper[name];
+                }
+            }
+        }
+        zkOptions.logger = logger;
+
+		this.zk = new ZooKeeper(zkOptions)
 		this.zk.once(
 			'expired',
 			function () { logger.info('zk expired') }
