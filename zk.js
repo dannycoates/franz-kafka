@@ -16,7 +16,6 @@ module.exports = function (
             zkOptions.hosts = options.zookeeper;
         }
         else {
-            console.log("Creating zookeeper with options");
             for(var name in options.zookeeper) {
                 if(options.zookeeper.hasOwnProperty(name)) {
                     zkOptions[name] = options.zookeeper[name];
@@ -24,8 +23,6 @@ module.exports = function (
             }
         }
         zkOptions.logger = logger;
-
-        console.log("======Zookeeper options",zkOptions);
 
 		this.zk = new ZooKeeper(zkOptions)
 		this.zk.once(
