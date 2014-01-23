@@ -12,7 +12,7 @@ module.exports = function (
 	function ZK(groupId, consumerId, options) {
 		EventEmitter.call(this);
         var zkOptions = {};
-        if(typeof options.zookeeper === "string") {
+        if(Array.isArray(options.zookeeper)) {
             zkOptions.hosts = options.zookeeper;
         }
         else {
