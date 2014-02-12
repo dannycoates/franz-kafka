@@ -4,7 +4,10 @@ var fs = require('fs')
 var file = fs.createWriteStream('./test.txt')
 
 var kafka = new Kafka({
-	zookeeper: ['localhost:2181'],
+	zookeeper: {
+        hosts: ['localhost:2181'],
+        path: "/"
+    },
 	brokers: [{
 		id: 0,
 		host: 'localhost',
