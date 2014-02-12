@@ -1,7 +1,7 @@
 {
   "name": "franz-kafka",
   "version": "0.7.5",
-  "description": "Kafka Client http://incubator.apache.org/kafka/",
+  "description": "Kafka Client http://incubator.apache.org/kafka/ backwards compatible zkjs options passthrough",
   "main": "index.js",
   "dependencies" : {
     "int53": "*",
@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/dannycoates/franz-kafka.git"
+    "url": "https://github.com/lp-labs/franz-kafka"
   },
   "keywords": [
     "kafka",
