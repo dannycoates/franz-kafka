@@ -65,11 +65,11 @@ module.exports = function (
 	}
 
 	ZKConnector.prototype._createBroker = function (id, info) {
-		var hostPort = info.split(':')
-		if (hostPort.length > 2) {
-			var host = hostPort[1]
-			var port = hostPort[2]
-			var oldBroker = this.brokers.get(id)
+		var hostPort=JSON.parse(info);
+		if (hostPort) {
+			var host = hostPort.host;
+			var port = hostPort.port;
+			var oldBroker = this.brokers.get(id);
 			if (oldBroker) {
 				if (oldBroker.host === host && oldBroker.port === port) {
 					return
